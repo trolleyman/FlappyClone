@@ -42,8 +42,8 @@ function Game() {
 		this.flappy[i] = new Image();
 		this.flappy[i].src = "/img/flappy" + (i + 1) + ".png";
 	}
-	this.flappyi = 0.0;
-	this.flappyDt = 0.5; // seconds per flappy frame
+	this.flappyi = 0.0; // current flappy frame
+	this.flappyDt = 0.1; // seconds per flappy frame
 	
 	// init vars
 	this.gravity = -180;
