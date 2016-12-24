@@ -5,11 +5,12 @@ function Pipe(x, y, spacing) {
 
 Pipe.prototype.reuse = function(x, y, spacing) {
 	if (typeof y === "undefined")
-		y = Math.random() * 500 + 100;
+		y = Math.random() * 300 + 200;
 	if (typeof spacing === "undefined")
-		spacing = 200;
+		spacing = 150;
 	
 	this.x = x;
 	this.y = y;
 	this.spacing = spacing;
+	this.passed = false;
 }

@@ -1,7 +1,7 @@
 
 const CAMERA_OFFSET_X = 50;
 const BIRD_OFFSET_Y = 100;
-const PIPE_SPACING_X = 200;
+const PIPE_SPACING_X = 250;
 
 function Game() {
 	// init canvas
@@ -41,23 +41,27 @@ function Game() {
 	this.flappy = [];
 	for (var i = 0; i < 4; i++) {
 		this.flappy[i] = new Image();
-		this.flappy[i].src = "img/flappy" + (i + 1) + ".png";
+		this.flappy[i].src = "img/flappy" + i + ".png";
 	}
 	this.flappyi = 0; // current flappy frame
-	this.flappyDt = 0.1; // seconds per flappy frame
+	this.flappyDt = 0.08; // seconds per flappy frame
 	this.pipe = new Image();
 	this.pipe.src = "img/pipe.png";
 	this.pipeHead = new Image();
 	this.pipeHead.src = "img/pipeHead.png";
+	this.ground = new Image();
+	this.ground.src = "img/ground.png";
 	
 	// init vars
+	this.score = 0;
 	this.cameraX = 0;
-	this.gravity = -300;
+	this.gravity = -500;
 	this.prevTime = NaN;
 	this.paused = false;
 	this.dead = false;
 	this.debug = false;
 	this.cameraUpdate = true;
+	//this.startState = true;
 	
 	// init bird
 	this.bird = new Bird();
@@ -135,9 +139,14 @@ Game.prototype.update = function() {
 	// update flappy frame #
 	this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
 	
-	// check pipes. regen if not valid.
+	// check pipes. regen if not valid. add to score if passed.
 	for (var i = 0; i < this.pipes.length; i++) {
 		var pipe = this.pipes[i];
+		if (!pipe.passed && pipe.x + this.pipeHead.width / 2 < this.bird.posX) {
+			// score pipe
+			this.score += 1;
+			pipe.passed = true;
+		}
 		if (pipe.x + this.pipeHead.width < this.cameraX) {
 			// not valid pipe, reuse.
 			pipe.reuse(this.pipeMax);
@@ -200,29 +209,34 @@ Game.prototype.render = function() {
 	// draw blank background first
 	tiledDrawImage(c, this.bgBlank);
 	// draw textured background
-	var offset = -this.bg.width - (this.cameraX % this.bg.width);
-	tiledDrawImage(c, this.bg, offset, c.canvas.height - this.bg.height, undefined, 1);
-	
-	// draw flappy bird
-	this.drawFlappy(c);
+	var offsetBg = -this.bg.width - ((this.cameraX / 2) % this.bg.width);
+	tiledDrawImage(c, this.bg, offsetBg, c.canvas.height - this.bg.height, undefined, 1);
 	
 	// draw pipes
 	for (var i = 0; i < this.pipes.length; i++) {
 		this.drawPipe(c, this.pipes[i]);
 	}
+	
+	// draw ground
+	var offsetGround = -this.ground.width - (this.cameraX % this.ground.width);
+	tiledDrawImage(c, this.ground, offsetGround, c.canvas.height - this.ground.height, undefined, 1);
+	
+	// draw flappy bird
+	this.drawFlappy(c);
 };
 
 Game.prototype.drawStats = function() {
 	this.stats.style.visibility = "visible";
 	
-	var html = '';
-	html += 'Paused: ' + this.paused + '<br>';
-	html += 'Dead: ' + this.dead + '<br>';
-	html += 'PosX: ' + this.bird.posX.toFixed(2) + '<br>';
-	html += 'PosY: ' + this.bird.posY.toFixed(2) + '<br>';
-	html += 'VelX: ' + this.bird.velX.toFixed(2) + '<br>';
-	html += 'VelY: ' + this.bird.velY.toFixed(2) + '<br>';
-	html += 'Gravity: ' + this.gravity;
+	var html = "";
+	html += "Score: " + this.score + "<br>";
+	html += "Paused: " + this.paused + "<br>";
+	html += "Dead: " + this.dead + "<br>";
+	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
+	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
+	html += "VelX: " + this.bird.velX.toFixed(2) + "<br>";
+	html += "VelY: " + this.bird.velY.toFixed(2) + "<br>";
+	html += "Gravity: " + this.gravity;
 	
 	this.stats.innerHTML = html;
 }
