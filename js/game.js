@@ -85,18 +85,21 @@ Game.prototype.mainLoop = function() {
 };
 
 Game.prototype.processKeys = function() {
-	// if escape has been pressed, toggle pause setting
-	if (this.keyDowns.indexOf("Escape") !== -1) {
-		this.paused = !this.paused;
-		if (!this.paused)
-			this.prevTime = Date.now().valueOf();
+	for (var i = 0; i < this.keyDowns.length; i++) {
+		var key = this.keyDowns[i];
+		// if escape has been pressed, toggle pause setting
+		if (key === "Escape") {
+			this.paused = !this.paused;
+			if (!this.paused)
+				this.prevTime = Date.now().valueOf();
+		}
+		// check for backtick
+		if (key === "Backquote") {
+			this.debug = !this.debug;
+		}
+		
+		console.log("Key pressed:", key);
 	}
-	// check for F1
-	if (this.keyDowns.indexOf("Backquote") !== -1) {
-		this.debug = !this.debug;
-	}
-	
-	if (this.keyDowns.length > 0) console.log(this.keyDowns);
 }
 
 Game.prototype.update = function() {
