@@ -57,6 +57,7 @@ function Game() {
 	this.paused = false;
 	this.dead = false;
 	this.debug = true;
+	this.cameraUpdate = true;
 	
 	// init bird
 	this.bird = new Bird();
@@ -99,9 +100,11 @@ Game.prototype.processKeys = function() {
 			if (!this.paused)
 				this.prevTime = Date.now().valueOf();
 		}
-		// check for backtick
-		if (key === "Backquote") {
+		if (key === "Digit1") {
 			this.debug = !this.debug;
+		}
+		if (key === "Digit2") {
+			this.cameraUpdate = !this.cameraUpdate;
 		}
 		
 		console.log("Key pressed:", key);
@@ -177,7 +180,8 @@ Game.prototype.render = function() {
 	c.imageSmoothingEnabled = false;
 	
 	// the camera is always at the bird pos.
-	this.cameraX = this.bird.posX - CAMERA_OFFSET_X;
+	if (this.cameraUpdate)
+		this.cameraX = this.bird.posX - CAMERA_OFFSET_X;
 	
 	// if debugging is off, hide the stats panel
 	if (this.debug) {
@@ -192,6 +196,7 @@ Game.prototype.render = function() {
 	var offset = -this.bg.width - (this.cameraX % this.bg.width);
 	tiledDrawImage(c, this.bg, offset, c.canvas.height - this.bg.height, undefined, 1);
 	
+	// draw flappy bird
 	this.drawFlappy(c);
 	
 	// draw pipes
@@ -222,11 +227,24 @@ Game.prototype.drawFlappy = function(c) {
 	var ang = Math.atan(-this.bird.velY / this.bird.velX);
 	
 	if (this.debug) {
+		// Draw velocity vector
 		c.beginPath();
 		c.moveTo(x, y);
 		c.lineTo(x + this.bird.velX, y - this.bird.velY);
+		c.strokeStyle = "black";
 		c.stroke();
-		c.closePath();
+		
+		// draw path
+		c.beginPath();
+		c.moveTo(x, y);
+		for (var i = 0; i < 500; i++) { // predict path 200 pixels in front
+			var t = i / this.bird.velX;
+			// s = ut + (1/2)at^2
+			var s = this.bird.velY*t + 0.5*this.gravity*t*t;
+			c.lineTo(x + i, y - s);
+		}
+		c.strokeStyle = "red";
+		c.stroke();
 	}
 	
 	// center x & y
