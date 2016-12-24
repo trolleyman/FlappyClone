@@ -3,7 +3,7 @@ function Bird() {
 	this.posX = 0;
 	this.posY = 300;
 	
-	this.velX = 80;
+	this.velX = 100;
 	this.velY = 20;
 	
 	this.lmbDownDt = 0; // TODO
@@ -16,6 +16,6 @@ Bird.prototype.update = function update(dt, gravity, lmbDown) {
 	this.velY += dt * gravity;
 		
 	if (lmbDown) {
-		this.velY = 180;
+		this.velY = 250;
 	}
 }

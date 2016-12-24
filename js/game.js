@@ -1,7 +1,7 @@
 
 const CAMERA_OFFSET_X = 50;
 const BIRD_OFFSET_Y = 100;
-const PIPE_SPACING_X = 100;
+const PIPE_SPACING_X = 200;
 
 function Game() {
 	// init canvas
@@ -46,9 +46,9 @@ function Game() {
 	this.flappyi = 0; // current flappy frame
 	this.flappyDt = 0.1; // seconds per flappy frame
 	this.pipe = new Image();
-	this.pipe.src = "/img/pipe.gif";
+	this.pipe.src = "/img/pipe.png";
 	this.pipeHead = new Image();
-	this.pipeHead.src = "/img/pipeHead.gif";
+	this.pipeHead.src = "/img/pipeHead.png";
 	
 	// init vars
 	this.cameraX = 0;
@@ -67,7 +67,7 @@ function Game() {
 	// init pipes
 	this.pipes = []; // TODO
 	var x = 200;
-	for (var i = 0; i < 4; i++) {
+	for (var i = 0; i < 10; i++) {
 		this.pipes[i] = new Pipe(x);
 		x += PIPE_SPACING_X;
 	}
@@ -143,36 +143,38 @@ Game.prototype.update = function() {
 	}
 }
 
-Game.prototype.render = function() {
-	function tiledDrawImage(c, img, offsetX, offsetY, maxX, maxY) {
-		if (typeof offsetX === "undefined") offsetX = 0;
-		if (typeof offsetY === "undefined") offsetY = 0;
-		if (typeof maxX === "undefined") maxX = Infinity;
-		if (typeof maxY === "undefined") maxY = Infinity;
-		
-		var cw = c.canvas.width,
-		    ch = c.canvas.height,
-		    iw = img.width,
-		    ih = img.height;
-		
-		if (iw == 0 || ih == 0)
-			return;
-		
-		var ny = 0;
-		for (var y = offsetY; y < ch && ny < maxY; y += ih) {
-			var nx = 0;
-			for (var x = offsetX; x < cw && nx < maxX; x += iw) {
-				c.drawImage(img, x, y);
-				nx += 1;
-			}
-			ny += 1;
-		}
-	}
+function tiledDrawImage(c, img, offsetX, offsetY, maxX, maxY) {
+	if (typeof offsetX === "undefined") offsetX = 0;
+	if (typeof offsetY === "undefined") offsetY = 0;
+	if (typeof maxX === "undefined") maxX = Infinity;
+	if (typeof maxY === "undefined") maxY = Infinity;
 	
+	var cw = c.canvas.width,
+		ch = c.canvas.height,
+		iw = img.width,
+		ih = img.height;
+	
+	if (iw == 0 || ih == 0)
+		return;
+	
+	var ny = 0;
+	for (var y = offsetY; y < ch && ny < maxY; y += ih) {
+		var nx = 0;
+		for (var x = offsetX; x < cw && nx < maxX; x += iw) {
+			c.drawImage(img, x, y, iw, ih);
+			nx += 1;
+		}
+		ny += 1;
+	}
+}
+
+Game.prototype.render = function() {
 	// get context
 	var c = this.canvas.getContext("2d");
 	// clear canvas - don't technically need this, but it's nice
 	c.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	// we want that pixel-y feel!
+	c.imageSmoothingEnabled = false;
 	
 	// the camera is always at the bird pos.
 	this.cameraX = this.bird.posX - CAMERA_OFFSET_X;
@@ -242,7 +244,10 @@ Game.prototype.drawFlappy = function(c) {
 }
 
 Game.prototype.drawPipe = function(c, pipe) {
-	// Draw lower head
-	c.drawImage(this.pipeHead, pipe.x - this.cameraX, c.canvas.height - pipe.y);
-	//c.drawImage(this.pipe);
+	// Draw lower pipe
+	var x = pipe.x - this.cameraX;
+	var ly = c.canvas.height - pipe.y;
+	
+	tiledDrawImage(c, this.pipe, x, ly, 1, undefined);
+	c.drawImage(this.pipeHead, x, ly);
 }
