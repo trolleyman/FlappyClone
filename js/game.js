@@ -56,7 +56,7 @@ function Game() {
 	this.prevTime = NaN;
 	this.paused = false;
 	this.dead = false;
-	this.debug = true;
+	this.debug = false;
 	this.cameraUpdate = true;
 	
 	// init bird
