@@ -59,9 +59,9 @@ function Game() {
 	this.prevTime = NaN;
 	this.paused = false;
 	this.dead = false;
-	this.debug = false;
+	this.debug = true;
 	this.cameraUpdate = true;
-	//this.startState = true;
+	this.startState = true;
 	
 	// init bird
 	this.bird = new Bird();
@@ -70,13 +70,10 @@ function Game() {
 	this.stats = document.getElementById("stats");
 	
 	// init pipes
-	this.pipes = []; // TODO
-	var x = 200;
+	this.pipes = [];
 	for (var i = 0; i < 10; i++) {
-		this.pipes[i] = new Pipe(x);
-		x += PIPE_SPACING_X;
+		this.pipes[i] = new Pipe(-200);
 	}
-	this.pipeMax = x;
 }
 
 Game.prototype.mainLoop = function() {
@@ -127,8 +124,20 @@ Game.prototype.update = function() {
 	var dt = (now - this.prevTime) / 1000.0;
 	this.prevTime = now;
 	
+	// check if time to start
+	if (this.startState && this.lmbDown) {
+		this.startState = false;
+		
+		var x = this.bird.posX + 800;
+		for (var i = 0; i < 10; i++) {
+			this.pipes[i] = new Pipe(x);
+			x += PIPE_SPACING_X;
+		}
+		this.pipeMax = x;
+	}
+	
 	// update bird
-	this.bird.update(dt, this.gravity, this.lmbDown);
+	this.bird.update(dt, this.gravity, this.lmbDown, this.startState);
 	
 	if (this.bird.posY < 0) {
 		this.dead = true;
@@ -140,17 +149,19 @@ Game.prototype.update = function() {
 	this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
 	
 	// check pipes. regen if not valid. add to score if passed.
-	for (var i = 0; i < this.pipes.length; i++) {
-		var pipe = this.pipes[i];
-		if (!pipe.passed && pipe.x + this.pipeHead.width / 2 < this.bird.posX) {
-			// score pipe
-			this.score += 1;
-			pipe.passed = true;
-		}
-		if (pipe.x + this.pipeHead.width < this.cameraX) {
-			// not valid pipe, reuse.
-			pipe.reuse(this.pipeMax);
-			this.pipeMax += PIPE_SPACING_X;
+	if (!this.startState) {
+		for (var i = 0; i < this.pipes.length; i++) {
+			var pipe = this.pipes[i];
+			if (!pipe.passed && pipe.x + this.pipeHead.width / 2 < this.bird.posX) {
+				// score pipe
+				this.score += 1;
+				pipe.passed = true;
+			}
+			if (pipe.x + this.pipeHead.width < this.cameraX) {
+				// not valid pipe, reuse.
+				pipe.reuse(this.pipeMax);
+				this.pipeMax += PIPE_SPACING_X;
+			}
 		}
 	}
 }
@@ -223,6 +234,11 @@ Game.prototype.render = function() {
 	this.drawFlappy(c);
 
 	// draw score
+	if (!this.startState)
+		this.drawScore(c);
+};
+
+Game.prototype.drawScore = function(c) {
 	function drawText(c, score, x, y) {
 		if (typeof x === "undefined") x = 0;
 		if (typeof y === "undefined") y = 0;
@@ -242,7 +258,7 @@ Game.prototype.render = function() {
 	c.font = "60px FlappyFont";
 	c.fillStyle = "white";
 	drawText(c, this.score);
-};
+}
 
 Game.prototype.drawStats = function() {
 	this.stats.style.visibility = "visible";
@@ -251,6 +267,7 @@ Game.prototype.drawStats = function() {
 	html += "Score: " + this.score + "<br>";
 	html += "Paused: " + this.paused + "<br>";
 	html += "Dead: " + this.dead + "<br>";
+	html += "StartState: " + this.startState + "<br>";
 	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
 	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
 	html += "VelX: " + this.bird.velX.toFixed(2) + "<br>";
@@ -277,12 +294,16 @@ Game.prototype.drawFlappy = function(c) {
 		// draw path
 		c.beginPath();
 		c.moveTo(x, y);
-		var stepSize = 10;
-		for (var i = 0; i < 300; i += stepSize) { // predict path 200 pixels in front
-			var t = i / this.bird.velX;
-			// s = ut + (1/2)at^2
-			var s = this.bird.velY*t + 0.5*this.gravity*t*t;
-			c.lineTo(x + i, y - s);
+		if (this.startState) {
+			c.lineTo(x+1000, y);
+		} else {			
+			var stepSize = 10;
+			for (var i = 0; i < 300; i += stepSize) { // predict path 200 pixels in front
+				var t = i / this.bird.velX;
+				// s = ut + (1/2)at^2
+				var s = this.bird.velY*t + 0.5*this.gravity*t*t;
+				c.lineTo(x + i, y - s);
+			}
 		}
 		c.strokeStyle = "red";
 		c.stroke();
