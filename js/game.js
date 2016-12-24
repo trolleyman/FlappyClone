@@ -146,6 +146,13 @@ Game.prototype.update = function() {
 	}
 }
 
+function drawImage(c, img, x, y, w, h) {
+	if (typeof w === "undefined" && typeof h === "undefined")
+		c.drawImage(img, Math.round(x), Math.round(y));
+	else
+		c.drawImage(img, Math.round(x), Math.round(y), w, h);
+}
+
 function tiledDrawImage(c, img, offsetX, offsetY, maxX, maxY) {
 	if (typeof offsetX === "undefined") offsetX = 0;
 	if (typeof offsetY === "undefined") offsetY = 0;
@@ -164,7 +171,7 @@ function tiledDrawImage(c, img, offsetX, offsetY, maxX, maxY) {
 	for (var y = offsetY; y < ch && ny < maxY; y += ih) {
 		var nx = 0;
 		for (var x = offsetX; x < cw && nx < maxX; x += iw) {
-			c.drawImage(img, x, y, iw, ih);
+			drawImage(c, img, x, y, iw, ih);
 			nx += 1;
 		}
 		ny += 1;
@@ -255,7 +262,7 @@ Game.prototype.drawFlappy = function(c) {
 	c.translate(x, y);
 	c.rotate(ang);
 	c.translate(offsetX, offsetY);
-	c.drawImage(img, 0, 0);
+	drawImage(c, img, 0, 0);
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-ang); // faster than c.save(); c.restore();
 	c.translate(-x, -y);
@@ -270,9 +277,9 @@ Game.prototype.drawPipe = function(c, pipe) {
 	c.scale(1, -1);
 	tiledDrawImage(c, this.pipe, x, -uy, 1, undefined);
 	c.scale(1, -1);
-	c.drawImage(this.pipeHead, x, uy);
+	drawImage(c, this.pipeHead, x, uy);
 	
 	// draw lower pipe
 	tiledDrawImage(c, this.pipe, x, ly, 1, undefined);
-	c.drawImage(this.pipeHead, x, ly);
+	drawImage(c, this.pipeHead, x, ly);
 }
