@@ -35,20 +35,20 @@ function Game() {
 	
 	// load images
 	this.bg = new Image();
-	this.bg.src = "/img/background.gif";
+	this.bg.src = "img/background.gif";
 	this.bgBlank = new Image();
-	this.bgBlank.src = "/img/backgroundBlank.gif";
+	this.bgBlank.src = "img/backgroundBlank.gif";
 	this.flappy = [];
 	for (var i = 0; i < 4; i++) {
 		this.flappy[i] = new Image();
-		this.flappy[i].src = "/img/flappy" + (i + 1) + ".png";
+		this.flappy[i].src = "img/flappy" + (i + 1) + ".png";
 	}
 	this.flappyi = 0; // current flappy frame
 	this.flappyDt = 0.1; // seconds per flappy frame
 	this.pipe = new Image();
-	this.pipe.src = "/img/pipe.png";
+	this.pipe.src = "img/pipe.png";
 	this.pipeHead = new Image();
-	this.pipeHead.src = "/img/pipeHead.png";
+	this.pipeHead.src = "img/pipeHead.png";
 	
 	// init vars
 	this.cameraX = 0;
