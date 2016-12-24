@@ -223,6 +223,27 @@ Game.prototype.render = function() {
 	
 	// draw flappy bird
 	this.drawFlappy(c);
+
+	// draw score
+	function drawText(c, score, x, y) {
+		if (typeof x === "undefined") x = 0;
+		if (typeof y === "undefined") y = 0;
+		var sc = 5;
+		x *= sc;
+		y *= sc;
+		c.fillText(score, Math.floor(c.canvas.width/2) + x, 150 + y);
+	}
+	c.textAlign = "center";
+	c.textBaseline = "middle";
+	c.font = "60px FlappyFont";
+	c.fillStyle = "black";
+	drawText(c, this.score,  1,  1);
+	drawText(c, this.score,  1, -1);
+	drawText(c, this.score, -1,  1);
+	drawText(c, this.score, -1, -1);
+	c.font = "60px FlappyFont";
+	c.fillStyle = "white";
+	drawText(c, this.score);
 };
 
 Game.prototype.drawStats = function() {
