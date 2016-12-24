@@ -1,4 +1,45 @@
 <!DOCTYPE html>
 <html>
-	<head><meta http-equiv="refresh" content="0; url=game.html" /></head>
+	<head>
+		<meta charset="utf-8">
+		<title>Move Right: One simple instruction.</title>
+		
+		<style>
+			body { margin: 0; }
+			#stats-container {
+				position: absolute; z-index: 1;
+				margin: 7px 7px 7px 7px;
+			}
+			#stats {
+				font-family: arial; line-height: 1.2;
+				background-color: rgba(0, 0, 0, 0.7); color: white;
+				padding: 7px 7px 7px 7px;
+				width: 120px;
+			}
+			@font-face {
+				font-family: FlappyFont;
+				src: url(font/flappy.ttf);
+			}
+		</style>
+	</head>
+	<body>
+		<script src="js/keys.js"></script>
+		<script src="js/pipe.js"></script>
+		<script src="js/bird.js"></script>
+		<script src="js/game.js"></script>
+		
+		<div id="game-container">
+			<div id="stats-container"><div id="stats"></div></div>
+			<canvas id="canvas" width="500" height="800"></canvas>
+		</div>
+		
+		<!-- Initialization code -->
+		<script>
+		window.onload = function(){
+			var game = new Game();
+			
+			window.requestAnimationFrame(game.mainLoop.bind(game));
+		};
+		</script>
+	</body>
 </html>
