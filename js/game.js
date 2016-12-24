@@ -52,7 +52,7 @@ function Game() {
 	
 	// init vars
 	this.cameraX = 0;
-	this.gravity = -180;
+	this.gravity = -300;
 	this.prevTime = NaN;
 	this.paused = false;
 	this.dead = false;
@@ -244,10 +244,17 @@ Game.prototype.drawFlappy = function(c) {
 }
 
 Game.prototype.drawPipe = function(c, pipe) {
-	// Draw lower pipe
 	var x = pipe.x - this.cameraX;
 	var ly = c.canvas.height - pipe.y;
+	var uy = ly - pipe.spacing;
 	
+	// draw upper pipe
+	c.scale(1, -1);
+	tiledDrawImage(c, this.pipe, x, -uy, 1, undefined);
+	c.scale(1, -1);
+	c.drawImage(this.pipeHead, x, uy);
+	
+	// draw lower pipe
 	tiledDrawImage(c, this.pipe, x, ly, 1, undefined);
 	c.drawImage(this.pipeHead, x, ly);
 }
