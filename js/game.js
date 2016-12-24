@@ -1,6 +1,7 @@
 
 const CAMERA_OFFSET_X = 50;
 const BIRD_OFFSET_Y = 100;
+const PIPE_SPACING_X = 100;
 
 function Game() {
 	// init canvas
@@ -44,6 +45,10 @@ function Game() {
 	}
 	this.flappyi = 0; // current flappy frame
 	this.flappyDt = 0.1; // seconds per flappy frame
+	this.pipe = new Image();
+	this.pipe.src = "/img/pipe.gif";
+	this.pipeHead = new Image();
+	this.pipeHead.src = "/img/pipeHead.gif";
 	
 	// init vars
 	this.cameraX = 0;
@@ -61,11 +66,12 @@ function Game() {
 	
 	// init pipes
 	this.pipes = []; // TODO
-	var x = 100;
-	for (var i = 0; i < 10; i++) {
-		this.pipes[i] = new Pipe(x, 100, 100);
-		x += 100;
+	var x = 200;
+	for (var i = 0; i < 4; i++) {
+		this.pipes[i] = new Pipe(x);
+		x += PIPE_SPACING_X;
 	}
+	this.pipeMax = x;
 }
 
 Game.prototype.mainLoop = function() {
@@ -125,14 +131,24 @@ Game.prototype.update = function() {
 	
 	// update flappy frame #
 	this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
+	
+	// check pipes. regen if not valid.
+	for (var i = 0; i < this.pipes.length; i++) {
+		var pipe = this.pipes[i];
+		if (pipe.x + this.pipeHead.width < this.cameraX) {
+			// not valid pipe, reuse.
+			pipe.reuse(this.pipeMax);
+			this.pipeMax += PIPE_SPACING_X;
+		}
+	}
 }
 
 Game.prototype.render = function() {
-	function tiledDrawImage(c, img, offsetX, offsetY) {
-		if (typeof offsetX === "undefined")
-			offsetX = 0;
-		if (typeof offsetY === "undefined")
-			offsetY = 0;
+	function tiledDrawImage(c, img, offsetX, offsetY, maxX, maxY) {
+		if (typeof offsetX === "undefined") offsetX = 0;
+		if (typeof offsetY === "undefined") offsetY = 0;
+		if (typeof maxX === "undefined") maxX = Infinity;
+		if (typeof maxY === "undefined") maxY = Infinity;
 		
 		var cw = c.canvas.width,
 		    ch = c.canvas.height,
@@ -142,26 +158,14 @@ Game.prototype.render = function() {
 		if (iw == 0 || ih == 0)
 			return;
 		
-		for (var y = offsetY; y < ch; y += ih) {
-			for (var x = offsetX; x < cw; x += iw) {
+		var ny = 0;
+		for (var y = offsetY; y < ch && ny < maxY; y += ih) {
+			var nx = 0;
+			for (var x = offsetX; x < cw && nx < maxX; x += iw) {
 				c.drawImage(img, x, y);
+				nx += 1;
 			}
-		}
-	}
-	function tiledDrawImageX(c, img, offsetX, offsetY) {
-		if (typeof offsetX === "undefined")
-			offsetX = 0;
-		if (typeof offsetY === "undefined")
-			offsetY = 0;
-		
-		var cw = c.canvas.width,
-		    iw = img.width;
-		
-		if (iw == 0)
-			return;
-		
-		for (var x = offsetX; x < cw; x += iw) {
-			c.drawImage(img, x, offsetY);
+			ny += 1;
 		}
 	}
 	
@@ -175,7 +179,7 @@ Game.prototype.render = function() {
 	
 	// if debugging is off, hide the stats panel
 	if (this.debug) {
-		this.renderStats();
+		this.drawStats();
 	} else {
 		this.stats.style.visibility = "hidden";
 	}
@@ -184,17 +188,17 @@ Game.prototype.render = function() {
 	tiledDrawImage(c, this.bgBlank);
 	// draw textured background
 	var offset = -this.bg.width - (this.cameraX % this.bg.width);
-	tiledDrawImageX(c, this.bg, offset, c.canvas.height - this.bg.height);
+	tiledDrawImage(c, this.bg, offset, c.canvas.height - this.bg.height, undefined, 1);
 	
 	this.drawFlappy(c);
 	
 	// draw pipes
 	for (var i = 0; i < this.pipes.length; i++) {
-		
+		this.drawPipe(c, this.pipes[i]);
 	}
 };
 
-Game.prototype.renderStats = function() {
+Game.prototype.drawStats = function() {
 	this.stats.style.visibility = "visible";
 	
 	var html = '';
@@ -212,7 +216,7 @@ Game.prototype.renderStats = function() {
 Game.prototype.drawFlappy = function(c) {
 	// draw flappy bird
 	var x = this.bird.posX - this.cameraX;
-	var y = this.canvas.height - this.bird.posY;
+	var y = c.canvas.height - this.bird.posY;
 	var ang = Math.atan(-this.bird.velY / this.bird.velX);
 	
 	if (this.debug) {
@@ -235,4 +239,10 @@ Game.prototype.drawFlappy = function(c) {
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-ang); // faster than c.save(); c.restore();
 	c.translate(-x, -y);
+}
+
+Game.prototype.drawPipe = function(c, pipe) {
+	// Draw lower head
+	c.drawImage(this.pipeHead, pipe.x - this.cameraX, c.canvas.height - pipe.y);
+	//c.drawImage(this.pipe);
 }
