@@ -46,6 +46,7 @@ function Game() {
 	this.flappyDt = 0.1; // seconds per flappy frame
 	
 	// init vars
+	this.cameraX = 0;
 	this.gravity = -180;
 	this.prevTime = NaN;
 	this.paused = false;
@@ -56,7 +57,7 @@ function Game() {
 	this.bird = new Bird();
 	
 	// init stats
-	this.stats = new Stats(this);
+	this.stats = document.getElementById("stats");
 	
 	// init pipes
 	this.pipes = []; // TODO
@@ -68,16 +69,14 @@ function Game() {
 }
 
 Game.prototype.mainLoop = function() {
+	// process key presses
+	this.processKeys();
+	
 	// update
 	this.update();
 	
 	// render
 	this.render();
-	
-	// set stats
-	this.stats.gravity = this.gravity;
-	var html = this.stats.toHTML();
-	document.getElementById("stats").innerHTML = html;
 	
 	// reset keys pressed since last frame
 	this.keyUps = [];
@@ -85,14 +84,22 @@ Game.prototype.mainLoop = function() {
 	window.requestAnimationFrame(this.mainLoop.bind(this));
 };
 
-Game.prototype.update = function() {
+Game.prototype.processKeys = function() {
 	// if escape has been pressed, toggle pause setting
 	if (this.keyDowns.indexOf("Escape") !== -1) {
 		this.paused = !this.paused;
 		if (!this.paused)
-		this.prevTime = Date.now().valueOf();
+			this.prevTime = Date.now().valueOf();
+	}
+	// check for F1
+	if (this.keyDowns.indexOf("Backquote") !== -1) {
+		this.debug = !this.debug;
 	}
 	
+	if (this.keyDowns.length > 0) console.log(this.keyDowns);
+}
+
+Game.prototype.update = function() {
 	if (this.paused)
 		return;
 	
@@ -163,12 +170,43 @@ Game.prototype.render = function() {
 	// the camera is always at the bird pos.
 	this.cameraX = this.bird.posX - CAMERA_OFFSET_X;
 	
+	// if debugging is off, hide the stats panel
+	if (this.debug) {
+		this.renderStats();
+	} else {
+		this.stats.style.visibility = "hidden";
+	}
+	
 	// draw blank background first
 	tiledDrawImage(c, this.bgBlank);
 	// draw textured background
 	var offset = -this.bg.width - (this.cameraX % this.bg.width);
 	tiledDrawImageX(c, this.bg, offset, c.canvas.height - this.bg.height);
 	
+	this.drawFlappy(c);
+	
+	// draw pipes
+	for (var i = 0; i < this.pipes.length; i++) {
+		
+	}
+};
+
+Game.prototype.renderStats = function() {
+	this.stats.style.visibility = "visible";
+	
+	var html = '';
+	html += 'Paused: ' + this.paused + '<br>';
+	html += 'Dead: ' + this.dead + '<br>';
+	html += 'PosX: ' + this.bird.posX.toFixed(2) + '<br>';
+	html += 'PosY: ' + this.bird.posY.toFixed(2) + '<br>';
+	html += 'VelX: ' + this.bird.velX.toFixed(2) + '<br>';
+	html += 'VelY: ' + this.bird.velY.toFixed(2) + '<br>';
+	html += 'Gravity: ' + this.gravity;
+	
+	this.stats.innerHTML = html;
+}
+
+Game.prototype.drawFlappy = function(c) {
 	// draw flappy bird
 	var x = this.bird.posX - this.cameraX;
 	var y = this.canvas.height - this.bird.posY;
@@ -194,4 +232,4 @@ Game.prototype.render = function() {
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-ang); // faster than c.save(); c.restore();
 	c.translate(-x, -y);
-};
+}
