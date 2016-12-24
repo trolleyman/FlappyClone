@@ -155,11 +155,9 @@ Game.prototype.update = function() {
 	}
 }
 
-function drawImage(c, img, x, y, w, h) {
-	if (typeof w === "undefined" && typeof h === "undefined")
-		c.drawImage(img, Math.round(x), Math.round(y));
-	else
-		c.drawImage(img, Math.round(x), Math.round(y), w, h);
+function drawImage(c, img, x, y) {
+	var w = img.width, h = img.height;
+	c.drawImage(img, 0, 0, w, h, Math.round(x), Math.round(y), w, h);
 }
 
 function tiledDrawImage(c, img, offsetX, offsetY, maxX, maxY) {
@@ -279,7 +277,8 @@ Game.prototype.drawFlappy = function(c) {
 		// draw path
 		c.beginPath();
 		c.moveTo(x, y);
-		for (var i = 0; i < 500; i++) { // predict path 200 pixels in front
+		var stepSize = 10;
+		for (var i = 0; i < 300; i += stepSize) { // predict path 200 pixels in front
 			var t = i / this.bird.velX;
 			// s = ut + (1/2)at^2
 			var s = this.bird.velY*t + 0.5*this.gravity*t*t;
@@ -298,6 +297,13 @@ Game.prototype.drawFlappy = function(c) {
 	c.rotate(ang);
 	c.translate(offsetX, offsetY);
 	drawImage(c, img, 0, 0);
+	if (this.debug) {
+		// draw bounding box
+		c.beginPath();
+		c.rect(0,0,img.width,img.height);
+		c.strokeStyle = "green";
+		c.stroke();
+	}
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-ang); // faster than c.save(); c.restore();
 	c.translate(-x, -y);
@@ -311,10 +317,26 @@ Game.prototype.drawPipe = function(c, pipe) {
 	// draw upper pipe
 	c.scale(1, -1);
 	tiledDrawImage(c, this.pipe, x, -uy, 1, undefined);
+	drawImage(c, this.pipeHead, x, -uy);
 	c.scale(1, -1);
-	drawImage(c, this.pipeHead, x, uy);
-	
+		
 	// draw lower pipe
 	tiledDrawImage(c, this.pipe, x, ly, 1, undefined);
 	drawImage(c, this.pipeHead, x, ly);
+
+	if (this.debug) {
+		c.beginPath();
+		c.rect(x,ly,this.pipeHead.width,1000);
+		c.strokeStyle = "blue";
+		c.stroke();
+		c.beginPath();
+		c.rect(x,uy,this.pipeHead.width,-1000);
+		c.strokeStyle = "blue";
+		c.stroke();
+
+		c.beginPath();
+		c.rect(x+this.pipeHead.width/4*1.5,uy,this.pipeHead.width/4,pipe.spacing);
+		c.strokeStyle = "gold";
+		c.stroke();
+	}
 }
