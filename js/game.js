@@ -281,7 +281,7 @@ Game.prototype.drawFlappy = function(c) {
 	// draw flappy bird
 	var x = this.bird.posX - this.cameraX;
 	var y = c.canvas.height - this.bird.posY;
-	var ang = Math.atan(-this.bird.velY / this.bird.velX);
+	var ang = this.bird.ang;
 	
 	if (this.debug) {
 		// Draw velocity vector
@@ -292,11 +292,9 @@ Game.prototype.drawFlappy = function(c) {
 		c.stroke();
 		
 		// draw path
-		c.beginPath();
-		c.moveTo(x, y);
-		if (this.startState) {
-			c.lineTo(x+1000, y);
-		} else {			
+		if (!this.startState) {
+			c.beginPath();
+			c.moveTo(x, y);
 			var stepSize = 10;
 			for (var i = 0; i < 300; i += stepSize) { // predict path 200 pixels in front
 				var t = i / this.bird.velX;
@@ -304,9 +302,9 @@ Game.prototype.drawFlappy = function(c) {
 				var s = this.bird.velY*t + 0.5*this.gravity*t*t;
 				c.lineTo(x + i, y - s);
 			}
+			c.strokeStyle = "red";
+			c.stroke();
 		}
-		c.strokeStyle = "red";
-		c.stroke();
 	}
 	
 	// center x & y
