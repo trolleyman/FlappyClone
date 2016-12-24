@@ -42,7 +42,7 @@ function Game() {
 		this.flappy[i] = new Image();
 		this.flappy[i].src = "/img/flappy" + (i + 1) + ".png";
 	}
-	this.flappyi = 0.0; // current flappy frame
+	this.flappyi = 0; // current flappy frame
 	this.flappyDt = 0.1; // seconds per flappy frame
 	
 	// init vars
@@ -50,6 +50,7 @@ function Game() {
 	this.prevTime = NaN;
 	this.paused = false;
 	this.dead = false;
+	this.debug = true;
 	
 	// init bird
 	this.bird = new Bird();
@@ -154,7 +155,10 @@ Game.prototype.render = function() {
 		}
 	}
 	
+	// get context
 	var c = this.canvas.getContext("2d");
+	// clear canvas - don't technically need this, but it's nice
+	c.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	
 	// the camera is always at the bird pos.
 	this.cameraX = this.bird.posX - CAMERA_OFFSET_X;
@@ -165,8 +169,29 @@ Game.prototype.render = function() {
 	var offset = -this.bg.width - (this.cameraX % this.bg.width);
 	tiledDrawImageX(c, this.bg, offset, c.canvas.height - this.bg.height);
 	
+	// draw flappy bird
 	var x = this.bird.posX - this.cameraX;
 	var y = this.canvas.height - this.bird.posY;
+	var ang = Math.atan(-this.bird.velY / this.bird.velX);
 	
-	c.drawImage(this.flappy[Math.floor(this.flappyi)], x, y);
+	if (this.debug) {
+		c.beginPath();
+		c.moveTo(x, y);
+		c.lineTo(x + this.bird.velX, y - this.bird.velY);
+		c.stroke();
+		c.closePath();
+	}
+	
+	// center x & y
+	var img = this.flappy[Math.floor(this.flappyi)];
+	offsetX = -img.width / 2;
+	offsetY = -img.height / 2;
+	
+	c.translate(x, y);
+	c.rotate(ang);
+	c.translate(offsetX, offsetY);
+	c.drawImage(img, 0, 0);
+	c.translate(-offsetX, -offsetY);
+	c.rotate(-ang); // faster than c.save(); c.restore();
+	c.translate(-x, -y);
 };
