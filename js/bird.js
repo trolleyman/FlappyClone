@@ -21,12 +21,20 @@ function Bird() {
 	this.t = 0;
 }
 
-Bird.prototype.update = function update(dt, gravity, lmbDown, startState) {
+Bird.prototype.update = function update(dt, gravity, lmbDown, startState, groundHeight, flappyHeight) {
 	if (startState) {
 		// oscillate around a point
 		this.t += dt;
 		this.t %= Math.PI * 2;
 		this.velY = Math.sin(this.t * 6) * 40;
+	}
+	// if on the ground
+	var h = groundHeight + flappyHeight / 2;
+	if (this.posY <= h && this.velY < 0) {
+		this.velY = 0;
+	}
+	if (this.posY < h) {
+		this.posY = h;
 	}
 	this.posX += dt * this.velX;
 	this.posY += dt * this.velY;

@@ -136,17 +136,17 @@ Game.prototype.update = function() {
 		this.pipeMax = x;
 	}
 	
+	// update flappy frame #
+	this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
+	
 	// update bird
-	this.bird.update(dt, this.gravity, this.lmbDown, this.startState);
+	this.bird.update(dt, this.gravity, this.lmbDown, this.startState, this.ground.height, this.flappy[Math.floor(this.flappyi)].height);
 	
 	if (this.bird.posY < 0) {
 		this.dead = true;
 	} else {
 		this.dead = false; // TODO
 	}
-	
-	// update flappy frame #
-	this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
 	
 	// check pipes. regen if not valid. add to score if passed.
 	if (!this.startState) {
