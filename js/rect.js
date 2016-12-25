@@ -8,14 +8,19 @@ function Rect(x, y, w, h, rot) {
 
 Rect.prototype.render = function(c) {
 	// center x & y
-	offsetX = -this.w / 2;
-	offsetY = -this.h / 2;
+	var offsetX = -this.w / 2;
+	var offsetY = -this.h / 2;
+	var y = c.canvas.height - this.y;
 	
-	c.translate(this.x, this.y);
+	c.translate(this.x, y);
 	c.rotate(this.rot);
 	c.translate(offsetX, offsetY);
 	c.strokeRect(0, 0, this.w, this.h);
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-this.rot); // faster than c.save(); c.restore();
-	c.translate(-this.x, -this.y);
+	c.translate(-this.x, -y);
+}
+
+Rect.prototype.intersects = function(r) {
+	return intersectsRects(this.x, this.y, this.w, this.h, this.rot, r.x, r.y, r.w, r.h, r.rot);
 }

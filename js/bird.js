@@ -23,6 +23,6 @@ function Bird() {
 	this.dead = false;
 }
 
-Bird.prototype.getBB = function(w, h, canvasH) {
-	return new Rect(this.posX, canvasH - this.posY, w, h, this.ang);
+Bird.prototype.getBB = function(w, h) {
+	return new Rect(this.posX, this.posY, w, h, this.ang);
 }

@@ -17,9 +17,9 @@ Pipe.prototype.reuse = function(x, y, spacing) {
 
 const PIPE_H = 2000;
 
-Pipe.prototype.bbUpper = function(w, canvasH) {
-	return new Rect(this.x, canvasH - this.y - this.spacing - PIPE_H, w, PIPE_H, 0);
+Pipe.prototype.bbUpper = function(w) {
+	return new Rect(this.x + w/2, this.y + this.spacing + PIPE_H/2, w, PIPE_H, 0);
 }
-Pipe.prototype.bbLower = function(w, canvasH) {
-	return new Rect(this.x, canvasH - this.y, w, PIPE_H, 0);
+Pipe.prototype.bbLower = function(w) {
+	return new Rect(this.x + w/2, this.y / 2, w, this.y, 0);
 }

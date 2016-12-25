@@ -1,3 +1,4 @@
+"use strict";
 
 const CAMERA_OFFSET_X = 50;
 const BIRD_OFFSET_Y = 100;
@@ -54,11 +55,12 @@ function Game() {
 	
 	// init vars
 	this.score = 0;
+	this.dead = false;
 	this.cameraX = 0;
 	this.gravity = -500;
 	this.prevTime = NaN;
 	this.paused = false;
-	this.debug = true;
+	this.debug = false;
 	this.cameraUpdate = true;
 	this.startState = true;
 	
@@ -140,7 +142,8 @@ Game.prototype.update = function() {
 	}
 	
 	// update flappy frame #
-	this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
+	if (!this.dead)
+		this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
 	
 	// update bird
 	this.updateFlappy(dt);
@@ -166,6 +169,9 @@ Game.prototype.update = function() {
 Game.prototype.updateFlappy = function(dt) {
 	var bird = this.bird;
 	
+	if (!this.startState)
+		bird.velY += dt * this.gravity;
+	
 	if (this.startState) {
 		// oscillate around a point if in start mode
 		bird.t += dt;
@@ -173,7 +179,7 @@ Game.prototype.updateFlappy = function(dt) {
 		bird.velY = Math.sin(bird.t * 6) * 40;
 	}
 	// if on the ground
-	var h = this.ground.height + this.flappy[Math.floor(this.flappyi)].height / 2;
+	var h = this.ground.height + this.flappyCurrent.height / 2;
 	if (bird.posY <= h && bird.velY < 0) {
 		bird.velY = 0;
 	}
@@ -189,24 +195,41 @@ Game.prototype.updateFlappy = function(dt) {
 	bird.ang = (bird.ang - bird.prevAng) * Math.min(1, 20 * dt) + bird.prevAng; // lerp
 	bird.prevAng = bird.ang;
 	
-	if (!this.startState)
-		bird.velY += dt * this.gravity;
-	
 	// bird flap logic
-	if (this.lmbDown) {
-		bird.lmbDownDt += dt;
-		if (bird.lmbDownDt <= LMB_MAX_DT) {
-			bird.velY = MAX_VEL_Y * (bird.lmbDownDt / LMB_MAX_DT);
+	if (!this.dead) {
+		if (this.lmbDown) {
+			bird.lmbDownDt += dt;
+			if (bird.lmbDownDt <= LMB_MAX_DT) {
+				bird.velY = MAX_VEL_Y * (bird.lmbDownDt / LMB_MAX_DT);
+			}
+		} else {
+			bird.lmbDownDt = 0;
 		}
-	} else {
-		bird.lmbDownDt = 0;
 	}
 	
 	// check for collisions with pipes. if a collision is found, kill the bird
-	var w = this.pipeHead.width;
-	for (var i = 0; i < this.pipes.length; i++) {
-		var pipe = this.pipes[i];
-		
+	if (!this.dead) {
+		var bb = bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height);
+		for (var i = 0; i < this.pipes.length; i++) {
+			var pipe = this.pipes[i];
+			
+			var ru = pipe.bbUpper(this.pipeHead.width);
+			var rl = pipe.bbLower(this.pipeHead.width);
+			
+			var intersected = false;
+			if (bb.intersects(ru)) {
+				console.log("bird intersects with pipe " + i + " (UPPER)");
+				intersected = true;
+			} else if (bb.intersects(rl)) {
+				console.log("bird intersects with pipe " + i + " (LOWER)");
+				intersected = true;
+			}
+			if (intersected) {
+				this.dead = true;
+				bird.velX = 0;
+				bird.velY = 200;
+			}
+		}
 	}
 }
 
@@ -310,7 +333,7 @@ Game.prototype.drawStats = function() {
 	var html = "";
 	html += "Score: " + this.score + "<br>";
 	html += "Paused: " + this.paused + "<br>";
-	html += "Dead: " + this.bird.dead + "<br>";
+	html += "Dead: " + this.dead + "<br>";
 	html += "StartState: " + this.startState + "<br>";
 	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
 	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
@@ -352,9 +375,9 @@ Game.prototype.drawFlappy = function(c) {
 	}
 	
 	// center x & y
-	var img = this.flappy[Math.floor(this.flappyi)];
-	offsetX = -img.width / 2;
-	offsetY = -img.height / 2;
+	var img = this.flappyCurrent;
+	var offsetX = -img.width / 2;
+	var offsetY = -img.height / 2;
 	
 	c.translate(x, y);
 	c.rotate(ang);
@@ -381,17 +404,19 @@ Game.prototype.drawPipe = function(c, pipe) {
 	tiledDrawImage(c, this.pipe, x, -uy, 1, undefined);
 	drawImage(c, this.pipeHead, x, -uy);
 	c.scale(1, -1);
-		
+	
 	// draw lower pipe
 	tiledDrawImage(c, this.pipe, x, ly, 1, undefined);
 	drawImage(c, this.pipeHead, x, ly);
 
 	if (this.debug) {
-		var ru = pipe.bbUpper(this.pipeHead.width, c.canvas.height); ru.x -= this.cameraX;
-		var rl = pipe.bbLower(this.pipeHead.width, c.canvas.height); rl.x -= this.cameraX; 
+		var ru = pipe.bbUpper(this.pipeHead.width);
+		ru.x -= this.cameraX;
+		var rl = pipe.bbLower(this.pipeHead.width);
+		rl.x -= this.cameraX; 
 		c.strokeStyle = "blue";
-		c.strokeRect(ru.x, ru.y, ru.w, ru.h);
-		c.strokeRect(rl.x, rl.y, rl.w, rl.h);
+		ru.render(c);//c.strokeRect(ru.x, c.canvas.height - ru.y, ru.w, ru.h);
+		rl.render(c);//c.strokeRect(rl.x, c.canvas.height - rl.y, rl.w, rl.h);
 		
 		c.beginPath();
 		c.rect(x+this.pipeHead.width/4*1.5,uy,this.pipeHead.width/4,pipe.spacing);
