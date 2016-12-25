@@ -58,7 +58,6 @@ function Game() {
 	this.gravity = -500;
 	this.prevTime = NaN;
 	this.paused = false;
-	this.dead = false;
 	this.debug = true;
 	this.cameraUpdate = true;
 	this.startState = true;
@@ -75,6 +74,10 @@ function Game() {
 		this.pipes[i] = new Pipe(-200);
 	}
 }
+
+Object.defineProperty(Game.prototype, 'flappyCurrent', {
+	get: function() { return this.flappy[Math.floor(this.flappyi)]; },
+});
 
 Game.prototype.mainLoop = function() {
 	window.requestAnimationFrame(this.mainLoop.bind(this));
@@ -140,13 +143,7 @@ Game.prototype.update = function() {
 	this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
 	
 	// update bird
-	this.bird.update(dt, this.gravity, this.lmbDown, this.startState, this.ground.height, this.flappy[Math.floor(this.flappyi)].height);
-	
-	if (this.bird.posY < 0) {
-		this.dead = true;
-	} else {
-		this.dead = false; // TODO
-	}
+	this.updateFlappy(dt);
 	
 	// check pipes. regen if not valid. add to score if passed.
 	if (!this.startState) {
@@ -163,6 +160,53 @@ Game.prototype.update = function() {
 				this.pipeMax += PIPE_SPACING_X;
 			}
 		}
+	}
+}
+
+Game.prototype.updateFlappy = function(dt) {
+	var bird = this.bird;
+	
+	if (this.startState) {
+		// oscillate around a point if in start mode
+		bird.t += dt;
+		bird.t %= Math.PI * 2;
+		bird.velY = Math.sin(bird.t * 6) * 40;
+	}
+	// if on the ground
+	var h = this.ground.height + this.flappy[Math.floor(this.flappyi)].height / 2;
+	if (bird.posY <= h && bird.velY < 0) {
+		bird.velY = 0;
+	}
+	if (bird.posY < h) {
+		bird.posY = h;
+	}
+	// update positions using velocity
+	bird.posX += dt * bird.velX;
+	bird.posY += dt * bird.velY;
+	
+	// bird angle logic
+	bird.ang = calculateAngle(bird.velX, bird.velY);
+	bird.ang = (bird.ang - bird.prevAng) * Math.min(1, 20 * dt) + bird.prevAng; // lerp
+	bird.prevAng = bird.ang;
+	
+	if (!this.startState)
+		bird.velY += dt * this.gravity;
+	
+	// bird flap logic
+	if (this.lmbDown) {
+		bird.lmbDownDt += dt;
+		if (bird.lmbDownDt <= LMB_MAX_DT) {
+			bird.velY = MAX_VEL_Y * (bird.lmbDownDt / LMB_MAX_DT);
+		}
+	} else {
+		bird.lmbDownDt = 0;
+	}
+	
+	// check for collisions with pipes. if a collision is found, kill the bird
+	var w = this.pipeHead.width;
+	for (var i = 0; i < this.pipes.length; i++) {
+		var pipe = this.pipes[i];
+		
 	}
 }
 
@@ -266,7 +310,7 @@ Game.prototype.drawStats = function() {
 	var html = "";
 	html += "Score: " + this.score + "<br>";
 	html += "Paused: " + this.paused + "<br>";
-	html += "Dead: " + this.dead + "<br>";
+	html += "Dead: " + this.bird.dead + "<br>";
 	html += "StartState: " + this.startState + "<br>";
 	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
 	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
@@ -316,16 +360,15 @@ Game.prototype.drawFlappy = function(c) {
 	c.rotate(ang);
 	c.translate(offsetX, offsetY);
 	drawImage(c, img, 0, 0);
-	if (this.debug) {
-		// draw bounding box
-		c.beginPath();
-		c.rect(0,0,img.width,img.height);
-		c.strokeStyle = "green";
-		c.stroke();
-	}
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-ang); // faster than c.save(); c.restore();
 	c.translate(-x, -y);
+	if (this.debug) {
+		var r = this.bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height, c.canvas.height);
+		r.x -= this.cameraX;
+		c.strokeStyle = "green";
+		r.render(c);
+	}
 }
 
 Game.prototype.drawPipe = function(c, pipe) {
@@ -344,15 +387,12 @@ Game.prototype.drawPipe = function(c, pipe) {
 	drawImage(c, this.pipeHead, x, ly);
 
 	if (this.debug) {
-		c.beginPath();
-		c.rect(x,ly,this.pipeHead.width,1000);
+		var ru = pipe.bbUpper(this.pipeHead.width, c.canvas.height); ru.x -= this.cameraX;
+		var rl = pipe.bbLower(this.pipeHead.width, c.canvas.height); rl.x -= this.cameraX; 
 		c.strokeStyle = "blue";
-		c.stroke();
-		c.beginPath();
-		c.rect(x,uy,this.pipeHead.width,-1000);
-		c.strokeStyle = "blue";
-		c.stroke();
-
+		c.strokeRect(ru.x, ru.y, ru.w, ru.h);
+		c.strokeRect(rl.x, rl.y, rl.w, rl.h);
+		
 		c.beginPath();
 		c.rect(x+this.pipeHead.width/4*1.5,uy,this.pipeHead.width/4,pipe.spacing);
 		c.strokeStyle = "gold";
