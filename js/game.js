@@ -59,8 +59,9 @@ function Game() {
 	this.gravity = -500;
 	this.prevTime = NaN;
 	this.paused = false;
-	this.debug = false;
-	this.cameraUpdate = true;
+	this.debugView = false;
+	this.debugAllowed = true; // is debugging allowed?
+	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.startState = true;
 	this.deadState = false;
 	
@@ -107,15 +108,15 @@ Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
 		var key = this.keyDowns[i];
 		// if escape has been pressed, toggle pause setting
-		if (key === "Escape") {
+		if (key === "Escape" && (this.debugAllowed || this.playingState)) {
 			this.paused = !this.paused;
 			if (!this.paused)
 				this.prevTime = Date.now().valueOf();
 		}
-		if (key === "Digit1") {
-			this.debug = !this.debug;
+		if (key === "Digit1" && this.debugAllowed) {
+			this.debugView = !this.debugView;
 		}
-		if (key === "Digit2") {
+		if (key === "Digit2" && this.debugAllowed) {
 			this.cameraUpdate = !this.cameraUpdate;
 		}
 		
@@ -283,7 +284,7 @@ Game.prototype.render = function() {
 		this.cameraX = this.bird.posX - CAMERA_OFFSET_X;
 	
 	// if debugging is off, hide the stats panel
-	if (this.debug) {
+	if (this.debugView) {
 		this.drawStats();
 	} else {
 		this.stats.style.visibility = "hidden";
@@ -390,7 +391,7 @@ Game.prototype.drawFlappy = function(c) {
 	var y = c.canvas.height - this.bird.posY;
 	var ang = this.bird.ang;
 	
-	if (this.debug) {
+	if (this.debugView) {
 		// Draw velocity vector
 		c.beginPath();
 		c.moveTo(x, y);
@@ -426,7 +427,7 @@ Game.prototype.drawFlappy = function(c) {
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-ang); // faster than c.save(); c.restore();
 	c.translate(-x, -y);
-	if (this.debug) {
+	if (this.debugView) {
 		var r = this.bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height, c.canvas.height);
 		r.x -= this.cameraX;
 		c.strokeStyle = "green";
@@ -448,8 +449,8 @@ Game.prototype.drawPipe = function(c, pipe) {
 	// draw lower pipe
 	tiledDrawImage(c, this.pipe, x, ly, 1, undefined);
 	drawImage(c, this.pipeHead, x, ly);
-
-	if (this.debug) {
+	
+	if (this.debugView) {
 		var ru = pipe.bbUpper(this.pipeHead.width);
 		ru.x -= this.cameraX;
 		var rl = pipe.bbLower(this.pipeHead.width);
