@@ -6,7 +6,7 @@ function Rect(x, y, w, h, rot) {
 	this.rot = rot;
 }
 
-Rect.prototype.render = function(c) {
+Rect.prototype.draw = function(c) {
 	// center x & y
 	var offsetX = -this.w / 2;
 	var offsetY = -this.h / 2;

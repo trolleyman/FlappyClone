@@ -13,7 +13,9 @@ function Game() {
 	this.canvas.onmousedown = function(e) {
 		if (e.button === 0) {
 			that.lmbDown = true;
-			console.log("lmb pressed");
+			that.mouseX = e.clientX;
+			that.mouseY = e.clientY;
+			console.log("lmb pressed (" + that.mouseX + ", " + that.mouseY + ")");
 		}
 	};
 	this.canvas.onmouseup = function(e) {
@@ -23,6 +25,9 @@ function Game() {
 		}
 	};
 	this.lmbDown = false;
+	this.lmbDownPrev = false;
+	this.mouseX = 0;
+	this.mouseY = 0;
 	
 	// setup keys
 	this.keys = [];
@@ -38,28 +43,38 @@ function Game() {
 	}
 	
 	// load images
-	this.bg = new Image();
-	this.bg.src = "img/background.png";
-	this.bgBlank = new Image();
-	this.bgBlank.src = "img/backgroundBlank.png";
-	this.flappy = [];
-	this.deadFlappy = [];
+	this.imgs = {};
+	this.imgs.bg = new Image();
+	this.imgs.bg.src = "img/background.png";
+	this.imgs.bgBlank = new Image();
+	this.imgs.bgBlank.src = "img/backgroundBlank.png";
+	this.imgs.flappy = [];
+	this.imgs.deadFlappy = [];
 	for (var i = 0; i < 4; i++) {
-		this.flappy[i] = new Image();
-		this.flappy[i].src = "img/flappy" + i + ".png";
-		this.deadFlappy[i] = new Image();
-		this.deadFlappy[i].src = "img/deadFlappy" + i + ".png";
+		this.imgs.flappy[i] = new Image();
+		this.imgs.flappy[i].src = "img/flappy" + i + ".png";
+		this.imgs.deadFlappy[i] = new Image();
+		this.imgs.deadFlappy[i].src = "img/deadFlappy" + i + ".png";
 	}
 	this.flappyi = 0; // current flappy frame
 	this.flappyDt = 0.08; // seconds per flappy frame
-	this.pipe = new Image();
-	this.pipe.src = "img/pipe.png";
-	this.pipeHead = new Image();
-	this.pipeHead.src = "img/pipeHead.png";
-	this.ground = new Image();
-	this.ground.src = "img/ground.png";
-	this.tapInfo = new Image();
-	this.tapInfo.src = "img/tapInfo.png";
+	this.imgs.pipe = new Image();
+	this.imgs.pipe.src = "img/pipe.png";
+	this.imgs.pipeHead = new Image();
+	this.imgs.pipeHead.src = "img/pipeHead.png";
+	this.imgs.ground = new Image();
+	this.imgs.ground.src = "img/ground.png";
+	this.imgs.tapInfo = new Image();
+	this.imgs.tapInfo.src = "img/tapInfo.png";
+	this.imgs.buttonPlay = new Image();
+	this.imgs.buttonPlay.src = "img/buttonPlay.png";
+	this.imgs.buttonPause = new Image();
+	this.imgs.buttonPause.src = "img/buttonPause.png";
+	
+	// setup buttons
+	var px = 50, py = 50;
+	this.buttonPlay = new Button(px, py, this.imgs.buttonPlay, (function() { this.togglePause() }).bind(this));
+	this.buttonPause = new Button(px, py, this.imgs.buttonPause, (function() { this.togglePause() }).bind(this));
 	
 	// init vars
 	this.score = 0;
@@ -95,16 +110,23 @@ function Game() {
 Object.defineProperty(Game.prototype, 'flappyCurrent', {
 	get: function() {
 		if (this.deadState)
-			return this.deadFlappy[Math.floor(this.flappyi)];
+			return this.imgs.deadFlappy[Math.floor(this.flappyi)];
 		else
-			return this.flappy[Math.floor(this.flappyi)];
+			return this.imgs.flappy[Math.floor(this.flappyi)];
 	},
 });
 Object.defineProperty(Game.prototype, 'flapButtonDown', {
-	get: function() { return this.lmbDown || this.keys["Space"]; },
+	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keys["Space"]; },
 });
 Object.defineProperty(Game.prototype, 'playingState', {
 	get: function() { return !this.startState && !this.deadState; },
+});
+Object.defineProperty(Game.prototype, 'buttons', {
+	get: function() {
+		if (this.playingState && this.paused) return [this.buttonPlay];
+		else if (this.playingState && !this.paused) return [this.buttonPause];
+		else return [];
+	},
 });
 
 Game.prototype.mainLoop = function() {
@@ -115,8 +137,8 @@ Game.prototype.mainLoop = function() {
 	// update
 	this.update();
 	
-	// render
-	this.render();
+	// draw
+	this.draw();
 	
 	// reset keys pressed since last frame
 	this.keyUps = [];
@@ -128,9 +150,7 @@ Game.prototype.processKeys = function() {
 		var key = this.keyDowns[i];
 		// if escape has been pressed, toggle pause setting
 		if (key === "Escape" && (this.debugAllowed || this.playingState)) {
-			this.paused = !this.paused;
-			if (!this.paused)
-				this.prevTime = Date.now().valueOf();
+			this.togglePause();
 		}
 		if (key === "Digit1" && this.debugAllowed) {
 			this.debugView = !this.debugView;
@@ -143,7 +163,31 @@ Game.prototype.processKeys = function() {
 	}
 }
 
+Game.prototype.togglePause = function() {
+	this.paused = !this.paused;
+	if (!this.paused)
+		this.prevTime = Date.now().valueOf();
+}
+
 Game.prototype.update = function() {
+	// check buttons
+	if (this.lmbDown) {
+		if (!this.lmbDownPrev) {
+			this.lmbHandled = false;
+			var bs = this.buttons;
+			for (var i = 0; i < bs.length; i++) {
+				var btn = bs[i];
+				if (btn.handleClick(this.mouseX, this.mouseY)) {
+					this.lmbHandled = true;
+					break;
+				}
+			}
+			this.lmbDownPrev = true;
+		}
+	} else {
+		this.lmbDownPrev = false;
+	}
+	
 	if (this.paused)
 		return;
 	
@@ -169,7 +213,7 @@ Game.prototype.update = function() {
 	
 	// update flappy frame #
 	if (!this.deadState)
-		this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
+		this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.imgs.flappy.length;
 	
 	// update bird
 	this.updateFlappy(dt);
@@ -178,12 +222,12 @@ Game.prototype.update = function() {
 	if (!this.startState) {
 		for (var i = 0; i < this.pipes.length; i++) {
 			var pipe = this.pipes[i];
-			if (!pipe.passed && pipe.x + this.pipeHead.width / 2 < this.bird.posX) {
+			if (!pipe.passed && pipe.x + this.imgs.pipeHead.width / 2 < this.bird.posX) {
 				// score pipe
 				this.score += 1;
 				pipe.passed = true;
 			}
-			if (pipe.x + this.pipeHead.width < this.cameraX) {
+			if (pipe.x + this.imgs.pipeHead.width < this.cameraX) {
 				// not valid pipe, reuse.
 				pipe.reuse(this.pipeMax);
 				this.pipeMax += PIPE_SPACING_X;
@@ -205,7 +249,7 @@ Game.prototype.updateFlappy = function(dt) {
 		bird.velY = Math.cos(bird.t * 4) * 70;
 	}
 	// if on the ground
-	var h = this.ground.height + this.flappyCurrent.height / 2;
+	var h = this.imgs.ground.height + this.flappyCurrent.height / 2;
 	if (bird.posY <= h && bird.velY < 0) {
 		bird.velY = 0;
 	}
@@ -248,8 +292,8 @@ Game.prototype.updateFlappy = function(dt) {
 		for (var i = 0; i < this.pipes.length; i++) {
 			var pipe = this.pipes[i];
 			
-			var ru = pipe.bbUpper(this.pipeHead.width);
-			var rl = pipe.bbLower(this.pipeHead.width);
+			var ru = pipe.bbUpper(this.imgs.pipeHead.width);
+			var rl = pipe.bbLower(this.imgs.pipeHead.width);
 			
 			var intersected = false;
 			if (bb.intersects(ru)) {
@@ -273,37 +317,7 @@ Game.prototype.killFlappy = function() {
 	this.deadState = true;
 }
 
-function drawImage(c, img, x, y) {
-	var w = img.width, h = img.height;
-	c.drawImage(img, 0, 0, w, h, Math.round(x), Math.round(y), w, h);
-}
-
-function tiledDrawImage(c, img, offsetX, offsetY, maxX, maxY) {
-	if (typeof offsetX === "undefined") offsetX = 0;
-	if (typeof offsetY === "undefined") offsetY = 0;
-	if (typeof maxX === "undefined") maxX = Infinity;
-	if (typeof maxY === "undefined") maxY = Infinity;
-	
-	var cw = c.canvas.width,
-		ch = c.canvas.height,
-		iw = img.width,
-		ih = img.height;
-	
-	if (iw == 0 || ih == 0)
-		return;
-	
-	var ny = 0;
-	for (var y = offsetY; y < ch && ny < maxY; y += ih) {
-		var nx = 0;
-		for (var x = offsetX; x < cw && nx < maxX; x += iw) {
-			drawImage(c, img, x, y, iw, ih);
-			nx += 1;
-		}
-		ny += 1;
-	}
-}
-
-Game.prototype.render = function() {
+Game.prototype.draw = function() {
 	// get context
 	var c = this.canvas.getContext("2d");
 	// clear canvas - don't technically need this, but it's nice
@@ -323,10 +337,10 @@ Game.prototype.render = function() {
 	}
 	
 	// draw blank background first
-	tiledDrawImage(c, this.bgBlank);
+	drawImageTiled(c, this.imgs.bgBlank);
 	// draw textured background
-	var offsetBg = -this.bg.width - ((this.cameraX / 2) % this.bg.width);
-	tiledDrawImage(c, this.bg, offsetBg, c.canvas.height - this.bg.height, undefined, 1);
+	var offsetBg = -this.imgs.bg.width - ((this.cameraX / 2) % this.imgs.bg.width);
+	drawImageTiled(c, this.imgs.bg, offsetBg, c.canvas.height - this.imgs.bg.height, undefined, 1);
 	
 	// draw pipes
 	for (var i = 0; i < this.pipes.length; i++) {
@@ -334,8 +348,8 @@ Game.prototype.render = function() {
 	}
 	
 	// draw ground
-	var offsetGround = -this.ground.width - (this.cameraX % this.ground.width);
-	tiledDrawImage(c, this.ground, offsetGround, c.canvas.height - this.ground.height, undefined, 1);
+	var offsetGround = -this.imgs.ground.width - (this.cameraX % this.imgs.ground.width);
+	drawImageTiled(c, this.imgs.ground, offsetGround, c.canvas.height - this.imgs.ground.height, undefined, 1);
 	
 	// draw flappy bird
 	this.drawFlappy(c);
@@ -344,38 +358,21 @@ Game.prototype.render = function() {
 	this.drawUI(c);
 };
 
-function drawFlappyText(c, text, startX, startY, col) {
-	function drawText(c, text, startX, startY, x, y) {
-		if (typeof x === "undefined") x = 0;
-		if (typeof y === "undefined") y = 0;
-		var sc = 5;
-		x *= sc;
-		y *= sc;
-		c.fillText(text, startX + x, startY + y);
-	}
-	if (typeof col === "undefined")
-		col = "white";
-	
-	c.fillStyle = "black";
-	drawText(c, text, startX, startY,  1,  1);
-	drawText(c, text, startX, startY,  1, -1);
-	drawText(c, text, startX, startY, -1,  1);
-	drawText(c, text, startX, startY, -1, -1);
-	c.fillStyle = col;
-	drawText(c, text, startX, startY);
-}
-
 Game.prototype.drawUI = function(c) {
 	// draw start screen
 	if (this.startState)
 		this.drawStartUI(c);
-
+	
 	// draw score
 	if (this.playingState)
 		this.drawScore(c);
 	
-	if (this.paused)
-		this.drawPaused(c);
+	// draw buttons
+	var bs = this.buttons;
+	for (var i = 0; i < bs.length; i++) {
+		var btn = bs[i];
+		btn.draw(c);
+	}
 }
 
 Game.prototype.drawScore = function(c) {
@@ -390,16 +387,13 @@ Game.prototype.drawStartUI = function(c) {
 	c.textBaseline = "middle";
 	c.font = "60px FlappyFont";
 	var x = Math.floor(c.canvas.width / 2);
-	drawFlappyText(c, "Flappy", x, 150, "gold");
-	drawFlappyText(c, "Clone", x, 150+60+20, "gold");
+	var col = "gold";//"#30e830";
+	drawFlappyText(c, "Flappy", x, 150, col);
+	drawFlappyText(c, "Clone", x, 150+60+20, col);
 	
-	drawImage(c, this.tapInfo, 100 + c.canvas.width/2 - this.tapInfo.width/2, (c.canvas.height - BIRD_START_Y) - this.tapInfo.height/2);
-}
-
-Game.prototype.drawPaused = function(c) {
-	c.textAlign = "left";
-	c.textBaseline = "top";
-	drawFlappyText(c, "||", 50, 50);
+	drawImage(c, this.imgs.tapInfo,
+		100 + c.canvas.width/2 - this.imgs.tapInfo.width/2,
+		(c.canvas.height - BIRD_START_Y) - this.imgs.tapInfo.height/2);
 }
 
 Game.prototype.drawStats = function() {
@@ -465,7 +459,7 @@ Game.prototype.drawFlappy = function(c) {
 		var r = this.bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height, c.canvas.height);
 		r.x -= this.cameraX;
 		c.strokeStyle = "green";
-		r.render(c);
+		r.draw(c);
 	}
 }
 
@@ -476,25 +470,25 @@ Game.prototype.drawPipe = function(c, pipe) {
 	
 	// draw upper pipe
 	c.scale(1, -1);
-	tiledDrawImage(c, this.pipe, x, -uy, 1, undefined);
-	drawImage(c, this.pipeHead, x, -uy);
+	drawImageTiled(c, this.imgs.pipe, x, -uy, 1, undefined);
+	drawImage(c, this.imgs.pipeHead, x, -uy);
 	c.scale(1, -1);
 	
 	// draw lower pipe
-	tiledDrawImage(c, this.pipe, x, ly, 1, undefined);
-	drawImage(c, this.pipeHead, x, ly);
+	drawImageTiled(c, this.imgs.pipe, x, ly, 1, undefined);
+	drawImage(c, this.imgs.pipeHead, x, ly);
 	
 	if (this.debugView) {
-		var ru = pipe.bbUpper(this.pipeHead.width);
+		var ru = pipe.bbUpper(this.imgs.pipeHead.width);
 		ru.x -= this.cameraX;
-		var rl = pipe.bbLower(this.pipeHead.width);
+		var rl = pipe.bbLower(this.imgs.pipeHead.width);
 		rl.x -= this.cameraX; 
 		c.strokeStyle = "blue";
-		ru.render(c);
-		rl.render(c);
+		ru.draw(c);
+		rl.draw(c);
 		
 		c.beginPath();
-		c.rect(x+this.pipeHead.width/4*1.5,uy,this.pipeHead.width/4,pipe.spacing);
+		c.rect(x+this.imgs.pipeHead.width/4*1.5,uy,this.imgs.pipeHead.width/4,pipe.spacing);
 		c.strokeStyle = "gold";
 		c.stroke();
 	}
