@@ -55,7 +55,6 @@ function Game() {
 	
 	// init vars
 	this.score = 0;
-	this.dead = false;
 	this.cameraX = 0;
 	this.gravity = -500;
 	this.prevTime = NaN;
@@ -63,6 +62,7 @@ function Game() {
 	this.debug = false;
 	this.cameraUpdate = true;
 	this.startState = true;
+	this.deadState = false;
 	
 	// init bird
 	this.bird = new Bird();
@@ -81,8 +81,10 @@ Object.defineProperty(Game.prototype, 'flappyCurrent', {
 	get: function() { return this.flappy[Math.floor(this.flappyi)]; },
 });
 Object.defineProperty(Game.prototype, 'flapButtonDown', {
-	get: function() {
-		return this.lmbDown || this.keys["Space"]; },
+	get: function() { return this.lmbDown || this.keys["Space"]; },
+});
+Object.defineProperty(Game.prototype, 'playingState', {
+	get: function() { return !this.startState && !this.deadState; },
 });
 
 Game.prototype.mainLoop = function() {
@@ -146,7 +148,7 @@ Game.prototype.update = function() {
 	}
 	
 	// update flappy frame #
-	if (!this.dead)
+	if (!this.deadState)
 		this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.flappy.length;
 	
 	// update bird
@@ -200,19 +202,20 @@ Game.prototype.updateFlappy = function(dt) {
 	bird.prevAng = bird.ang;
 	
 	// bird flap logic
-	if (!this.dead) {
+	if (!this.deadState) {
 		if (this.flapButtonDown) {
 			bird.flapDownDt += dt;
 			if (bird.flapDownDt <= LMB_MAX_DT) {
 				bird.velY = MAX_VEL_Y * (bird.flapDownDt / LMB_MAX_DT);
 			}
 		} else {
-			bird.flapDownDt = 0;
+			bird.flapDownDt -= dt * 2;
+			bird.flapDownDt = Math.max(0, bird.flapDownDt);
 		}
 	}
 	
 	// check for collisions with pipes. if a collision is found, kill the bird
-	if (!this.dead) {
+	if (!this.deadState) {
 		var bb = bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height);
 		for (var i = 0; i < this.pipes.length; i++) {
 			var pipe = this.pipes[i];
@@ -229,7 +232,7 @@ Game.prototype.updateFlappy = function(dt) {
 				intersected = true;
 			}
 			if (intersected) {
-				this.dead = true;
+				this.deadState = true;
 				bird.velX = 0;
 				bird.velY = 200;
 			}
@@ -305,30 +308,63 @@ Game.prototype.render = function() {
 	this.drawFlappy(c);
 
 	// draw score
-	if (!this.startState)
-		this.drawScore(c);
+	this.drawUI(c);
 };
 
-Game.prototype.drawScore = function(c) {
-	function drawText(c, score, x, y) {
+function drawFlappyText(c, text, startX, startY, col) {
+	function drawText(c, text, startX, startY, x, y) {
 		if (typeof x === "undefined") x = 0;
 		if (typeof y === "undefined") y = 0;
 		var sc = 5;
 		x *= sc;
 		y *= sc;
-		c.fillText(score, Math.floor(c.canvas.width/2) + x, 150 + y);
+		c.fillText(text, startX + x, startY + y);
 	}
+	if (typeof col === "undefined")
+		col = "white";
+	
+	c.fillStyle = "black";
+	drawText(c, text, startX, startY,  1,  1);
+	drawText(c, text, startX, startY,  1, -1);
+	drawText(c, text, startX, startY, -1,  1);
+	drawText(c, text, startX, startY, -1, -1);
+	c.fillStyle = col;
+	drawText(c, text, startX, startY);
+}
+
+Game.prototype.drawUI = function(c) {
+	// draw start screen
+	if (this.startState)
+		this.drawStartUI(c);
+
+	// draw score
+	if (this.playingState)
+		this.drawScore(c);
+	
+	if (this.paused)
+		this.drawPaused(c);
+}
+
+Game.prototype.drawScore = function(c) {
 	c.textAlign = "center";
 	c.textBaseline = "middle";
 	c.font = "60px FlappyFont";
-	c.fillStyle = "black";
-	drawText(c, this.score,  1,  1);
-	drawText(c, this.score,  1, -1);
-	drawText(c, this.score, -1,  1);
-	drawText(c, this.score, -1, -1);
+	drawFlappyText(c, this.score, Math.floor(c.canvas.width / 2), 150);
+}
+
+Game.prototype.drawStartUI = function(c) {
+	c.textAlign = "center";
+	c.textBaseline = "middle";
 	c.font = "60px FlappyFont";
-	c.fillStyle = "white";
-	drawText(c, this.score);
+	var x = Math.floor(c.canvas.width / 2);
+	drawFlappyText(c, "Flappy", x, 150, "gold");
+	drawFlappyText(c, "Clone", x, 150+60+20, "gold");
+}
+
+Game.prototype.drawPaused = function(c) {
+	c.textAlign = "left";
+	c.textBaseline = "top";
+	drawFlappyText(c, "||", 50, 50);
 }
 
 Game.prototype.drawStats = function() {
@@ -337,7 +373,7 @@ Game.prototype.drawStats = function() {
 	var html = "";
 	html += "Score: " + this.score + "<br>";
 	html += "Paused: " + this.paused + "<br>";
-	html += "Dead: " + this.dead + "<br>";
+	html += "Dead: " + this.deadState + "<br>";
 	html += "StartState: " + this.startState + "<br>";
 	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
 	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
