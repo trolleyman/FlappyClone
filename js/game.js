@@ -70,11 +70,14 @@ function Game() {
 	this.imgs.buttonPlay.src = "img/buttonPlay.png";
 	this.imgs.buttonPause = new Image();
 	this.imgs.buttonPause.src = "img/buttonPause.png";
+	this.imgs.buttonRestart = new Image();
+	this.imgs.buttonRestart.src = "img/buttonRestart.png";
 	
 	// setup buttons
 	var px = 50, py = 50;
-	this.buttonPlay = new Button(px, py, this.imgs.buttonPlay, (function() { this.togglePause() }).bind(this));
-	this.buttonPause = new Button(px, py, this.imgs.buttonPause, (function() { this.togglePause() }).bind(this));
+	this.buttonPlay = new Button(px, py, this.imgs.buttonPlay, this.togglePause.bind(this));
+	this.buttonPause = new Button(px, py, this.imgs.buttonPause, this.togglePause.bind(this));
+	this.buttonRestart = new Button(this.canvas.width/2 - this.imgs.buttonRestart.width/2, 100, this.imgs.buttonRestart, this.restart.bind(this));
 	
 	// init vars
 	this.score = 0;
@@ -125,6 +128,7 @@ Object.defineProperty(Game.prototype, 'buttons', {
 	get: function() {
 		if (this.playingState && this.paused) return [this.buttonPlay];
 		else if (this.playingState && !this.paused) return [this.buttonPause];
+		else if (this.deadState) return [this.buttonRestart];
 		else return [];
 	},
 });
@@ -167,6 +171,10 @@ Game.prototype.togglePause = function() {
 	this.paused = !this.paused;
 	if (!this.paused)
 		this.prevTime = Date.now().valueOf();
+}
+
+Game.prototype.restart = function() {
+	Game.bind(this)();
 }
 
 Game.prototype.update = function() {
