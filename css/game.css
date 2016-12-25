@@ -1,0 +1,25 @@
+body {
+	margin: 0;
+}
+#game-container {
+	position: relative;
+}
+#stats-container {
+	position: absolute;
+	z-index: 1;
+	margin: 7px 7px 7px 7px;
+	right: 0;
+}
+#stats {
+	font-family: arial; line-height: 1.2;
+	background-color: rgba(0, 0, 0, 0.7); color: white;
+	padding: 7px 7px 7px 7px;
+	width: 120px;
+}
+#canvas {
+	position: absolute;
+}
+@font-face {
+	font-family: FlappyFont;
+	src: url(../font/flappy.ttf);
+}

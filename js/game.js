@@ -1,8 +1,10 @@
 "use strict";
 
-const CAMERA_OFFSET_X = 50;
+const CAMERA_OFFSET_X = 100;
 const BIRD_OFFSET_Y = 100;
 const PIPE_SPACING_X = 250;
+
+const MAX_VEL_Y = 400;
 
 function Game() {
 	// init canvas
@@ -22,6 +24,7 @@ function Game() {
 	};
 	this.lmbDown = false;
 	
+	// setup keys
 	this.keys = [];
 	this.keyUps = [];
 	this.keyDowns = [];
@@ -36,13 +39,16 @@ function Game() {
 	
 	// load images
 	this.bg = new Image();
-	this.bg.src = "img/background.gif";
+	this.bg.src = "img/background.png";
 	this.bgBlank = new Image();
-	this.bgBlank.src = "img/backgroundBlank.gif";
+	this.bgBlank.src = "img/backgroundBlank.png";
 	this.flappy = [];
+	this.deadFlappy = [];
 	for (var i = 0; i < 4; i++) {
 		this.flappy[i] = new Image();
 		this.flappy[i].src = "img/flappy" + i + ".png";
+		this.deadFlappy[i] = new Image();
+		this.deadFlappy[i].src = "img/deadFlappy" + i + ".png";
 	}
 	this.flappyi = 0; // current flappy frame
 	this.flappyDt = 0.08; // seconds per flappy frame
@@ -56,7 +62,7 @@ function Game() {
 	// init vars
 	this.score = 0;
 	this.cameraX = 0;
-	this.gravity = -500;
+	this.gravity = -800;
 	this.prevTime = NaN;
 	this.paused = false;
 	this.debugView = false;
@@ -64,6 +70,12 @@ function Game() {
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.startState = true;
 	this.deadState = false;
+	
+	// setup handling focus events
+	window.onblur = function(e) {
+		if (that.playingState)
+			that.paused = true;
+	}
 	
 	// init bird
 	this.bird = new Bird();
@@ -79,7 +91,12 @@ function Game() {
 }
 
 Object.defineProperty(Game.prototype, 'flappyCurrent', {
-	get: function() { return this.flappy[Math.floor(this.flappyi)]; },
+	get: function() {
+		if (this.deadState)
+			return this.deadFlappy[Math.floor(this.flappyi)];
+		else
+			return this.flappy[Math.floor(this.flappyi)];
+	},
 });
 Object.defineProperty(Game.prototype, 'flapButtonDown', {
 	get: function() { return this.lmbDown || this.keys["Space"]; },
@@ -183,16 +200,25 @@ Game.prototype.updateFlappy = function(dt) {
 		// oscillate around a point if in start mode
 		bird.t += dt;
 		bird.t %= Math.PI * 2;
-		bird.velY = Math.sin(bird.t * 6) * 40;
+		bird.velY = Math.sin(bird.t * 4) * 70;
 	}
 	// if on the ground
 	var h = this.ground.height + this.flappyCurrent.height / 2;
 	if (bird.posY <= h && bird.velY < 0) {
 		bird.velY = 0;
 	}
-	if (bird.posY < h) {
+	if (bird.posY <= h) {
 		bird.posY = h;
+		this.killFlappy();
 	}
+	// if at the top of the screen
+	var ch = this.canvas.height;
+	var t = this.flappyCurrent.height / 2;
+	if (bird.posY + t > ch) {
+		bird.posY = ch - t;
+		bird.velY = 0;
+	}
+	
 	// update positions using velocity
 	bird.posX += dt * bird.velX;
 	bird.posY += dt * bird.velY;
@@ -205,13 +231,12 @@ Game.prototype.updateFlappy = function(dt) {
 	// bird flap logic
 	if (!this.deadState) {
 		if (this.flapButtonDown) {
-			bird.flapDownDt += dt;
-			if (bird.flapDownDt <= LMB_MAX_DT) {
-				bird.velY = MAX_VEL_Y * (bird.flapDownDt / LMB_MAX_DT);
+			if (!bird.flapButtonDownPrev) {
+				bird.velY = MAX_VEL_Y;
 			}
+			bird.flapButtonDownPrev = true;
 		} else {
-			bird.flapDownDt -= dt * 2;
-			bird.flapDownDt = Math.max(0, bird.flapDownDt);
+			bird.flapButtonDownPrev = false;
 		}
 	}
 	
@@ -233,12 +258,17 @@ Game.prototype.updateFlappy = function(dt) {
 				intersected = true;
 			}
 			if (intersected) {
-				this.deadState = true;
-				bird.velX = 0;
-				bird.velY = 200;
+				this.killFlappy();
 			}
 		}
 	}
+}
+
+Game.prototype.killFlappy = function() {
+	if (!this.deadState)
+		this.bird.velY = 300;
+	this.bird.velX = 0;
+	this.deadState = true;
 }
 
 function drawImage(c, img, x, y) {
@@ -456,8 +486,8 @@ Game.prototype.drawPipe = function(c, pipe) {
 		var rl = pipe.bbLower(this.pipeHead.width);
 		rl.x -= this.cameraX; 
 		c.strokeStyle = "blue";
-		ru.render(c);//c.strokeRect(ru.x, c.canvas.height - ru.y, ru.w, ru.h);
-		rl.render(c);//c.strokeRect(rl.x, c.canvas.height - rl.y, rl.w, rl.h);
+		ru.render(c);
+		rl.render(c);
 		
 		c.beginPath();
 		c.rect(x+this.pipeHead.width/4*1.5,uy,this.pipeHead.width/4,pipe.spacing);

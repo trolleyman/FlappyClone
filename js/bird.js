@@ -1,7 +1,5 @@
 
 const BIRD_START_Y = 300;
-const MAX_VEL_Y = 300;
-const LMB_MAX_DT = 0.15;
 
 function calculateAngle(x, y) {
 	return Math.atan(-y / x);
@@ -17,7 +15,7 @@ function Bird() {
 	this.ang = calculateAngle(this.velX, this.velY);
 	this.prevAng = this.ang;
 	
-	this.flapDownDt = 0;
+	this.flapButtonDownPrev = false;
 	this.t = 0;
 	
 	this.dead = false;
