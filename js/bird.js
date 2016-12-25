@@ -26,7 +26,7 @@ Bird.prototype.update = function update(dt, gravity, lmbDown, startState) {
 		// oscillate around a point
 		this.t += dt;
 		this.t %= Math.PI * 2;
-		this.velY = Math.sin(this.t * 8) * 10;
+		this.velY = Math.sin(this.t * 6) * 40;
 	}
 	this.posX += dt * this.velX;
 	this.posY += dt * this.velY;

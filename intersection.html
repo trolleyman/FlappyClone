@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Intersection Test</title>
+		
+		<style>
+			body { margin: 0; }
+		</style>
+	</head>
+	<body>
+		<script src="js/intersection.js"></script>
+		<script src="js/intersection-test.js"></script>
+		
+		<div id="container">
+			<div id="out"></div>
+			<canvas id="canvas" width="600" height="800"></canvas>
+		</div>
+		
+		<!-- Initialization code -->
+		<script>
+		window.onload = function(){
+			var test = new IntersectionTest();
+			
+			window.requestAnimationFrame(test.mainLoop.bind(test));
+		};
+		</script>
+	</body>
+</html>

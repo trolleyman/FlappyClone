@@ -77,6 +77,7 @@ function Game() {
 }
 
 Game.prototype.mainLoop = function() {
+	window.requestAnimationFrame(this.mainLoop.bind(this));
 	// process key presses
 	this.processKeys();
 	
@@ -89,7 +90,6 @@ Game.prototype.mainLoop = function() {
 	// reset keys pressed since last frame
 	this.keyUps = [];
 	this.keyDowns = [];
-	window.requestAnimationFrame(this.mainLoop.bind(this));
 };
 
 Game.prototype.processKeys = function() {
