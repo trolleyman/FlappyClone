@@ -58,6 +58,8 @@ function Game() {
 	this.pipeHead.src = "img/pipeHead.png";
 	this.ground = new Image();
 	this.ground.src = "img/ground.png";
+	this.tapInfo = new Image();
+	this.tapInfo.src = "img/tapInfo.png";
 	
 	// init vars
 	this.score = 0;
@@ -200,7 +202,7 @@ Game.prototype.updateFlappy = function(dt) {
 		// oscillate around a point if in start mode
 		bird.t += dt;
 		bird.t %= Math.PI * 2;
-		bird.velY = Math.sin(bird.t * 4) * 70;
+		bird.velY = Math.cos(bird.t * 4) * 70;
 	}
 	// if on the ground
 	var h = this.ground.height + this.flappyCurrent.height / 2;
@@ -225,7 +227,7 @@ Game.prototype.updateFlappy = function(dt) {
 	
 	// bird angle logic
 	bird.ang = calculateAngle(bird.velX, bird.velY);
-	bird.ang = (bird.ang - bird.prevAng) * Math.min(1, 20 * dt) + bird.prevAng; // lerp
+	bird.ang = (bird.ang - bird.prevAng) * Math.min(1, 15 * dt) + bird.prevAng; // lerp
 	bird.prevAng = bird.ang;
 	
 	// bird flap logic
@@ -390,6 +392,8 @@ Game.prototype.drawStartUI = function(c) {
 	var x = Math.floor(c.canvas.width / 2);
 	drawFlappyText(c, "Flappy", x, 150, "gold");
 	drawFlappyText(c, "Clone", x, 150+60+20, "gold");
+	
+	drawImage(c, this.tapInfo, 100 + c.canvas.width/2 - this.tapInfo.width/2, (c.canvas.height - BIRD_START_Y) - this.tapInfo.height/2);
 }
 
 Game.prototype.drawPaused = function(c) {

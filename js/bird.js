@@ -1,5 +1,5 @@
 
-const BIRD_START_Y = 300;
+const BIRD_START_Y = 350;
 
 function calculateAngle(x, y) {
 	return Math.atan(-y / x);
