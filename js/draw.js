@@ -1,6 +1,6 @@
 function drawImage(c, img, x, y) {
 	var w = img.width, h = img.height;
-	c.drawImage(img, 0, 0, w, h, Math.round(x), Math.round(y), w, h);
+	c. drawImage(img, 0, 0, w, h, Math.round(x), Math.round(y), w, h);
 }
 
 function drawImageTiled(c, img, offsetX, offsetY, maxX, maxY) {
@@ -28,24 +28,23 @@ function drawImageTiled(c, img, offsetX, offsetY, maxX, maxY) {
 	}
 }
 
-function drawFlappyText(c, text, startX, startY, col) {
-	function drawText(c, text, startX, startY, x, y) {
+function drawFlappyText(c, text, startX, startY, col, outline) {
+	function drawText(c, text, startX, startY, outline, x, y) {
 		if (typeof x === "undefined") x = 0;
 		if (typeof y === "undefined") y = 0;
-		var sc = 5;
-		x *= sc;
-		y *= sc;
+		x *= outline;
+		y *= outline;
 		c.fillText(text, startX + x, startY + y);
 	}
-	if (typeof col === "undefined")
-		col = "white";
+	if (typeof col === "undefined") col = "white";
+	if (typeof outline === "undefined") outline = 5;
 	
 	c.fillStyle = "black";
-	drawText(c, text, startX, startY,  1,  1);
-	drawText(c, text, startX, startY,  1, -1);
-	drawText(c, text, startX, startY, -1,  1);
-	drawText(c, text, startX, startY, -1, -1);
+	drawText(c, text, startX, startY, outline,  1,  1);
+	drawText(c, text, startX, startY, outline,  1, -1);
+	drawText(c, text, startX, startY, outline, -1,  1);
+	drawText(c, text, startX, startY, outline, -1, -1);
 	c.fillStyle = col;
-	drawText(c, text, startX, startY);
+	drawText(c, text, startX, startY, outline);
 }
 

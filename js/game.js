@@ -70,14 +70,22 @@ function Game() {
 	this.imgs.buttonPlay.src = "img/buttonPlay.png";
 	this.imgs.buttonPause = new Image();
 	this.imgs.buttonPause.src = "img/buttonPause.png";
+	var spacing = 20;
 	this.imgs.buttonRestart = new Image();
+	this.imgs.buttonRestart.onload = (function() {
+		this.buttonRestart.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
+	}).bind(this);
 	this.imgs.buttonRestart.src = "img/buttonRestart.png";
+	this.imgs.buttonLeaderboard = new Image();
+	this.imgs.buttonLeaderboard.src = "img/buttonRestart.png";
 	
 	// setup buttons
 	var px = 50, py = 50;
 	this.buttonPlay = new Button(px, py, this.imgs.buttonPlay, this.togglePause.bind(this));
 	this.buttonPause = new Button(px, py, this.imgs.buttonPause, this.togglePause.bind(this));
-	this.buttonRestart = new Button(this.canvas.width/2 - this.imgs.buttonRestart.width/2, 100, this.imgs.buttonRestart, this.restart.bind(this));
+	var dy = 300;
+	this.buttonRestart = new Button(this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2, dy, this.imgs.buttonRestart, this.restart.bind(this));
+	this.buttonLeaderboard = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonLeaderboard, this.restart.bind(this));
 	
 	// init vars
 	this.score = 0;
@@ -128,7 +136,7 @@ Object.defineProperty(Game.prototype, 'buttons', {
 	get: function() {
 		if (this.playingState && this.paused) return [this.buttonPlay];
 		else if (this.playingState && !this.paused) return [this.buttonPause];
-		else if (this.deadState) return [this.buttonRestart];
+		else if (this.deadState) return [this.buttonRestart, this.buttonLeaderboard];
 		else return [];
 	},
 });
@@ -375,6 +383,10 @@ Game.prototype.drawUI = function(c) {
 	if (this.playingState)
 		this.drawScore(c);
 	
+	// draw death screen
+	if (this.deadState)
+		this.drawDeathUI(c);
+	
 	// draw buttons
 	var bs = this.buttons;
 	for (var i = 0; i < bs.length; i++) {
@@ -384,10 +396,10 @@ Game.prototype.drawUI = function(c) {
 }
 
 Game.prototype.drawScore = function(c) {
-	c.textAlign = "center";
-	c.textBaseline = "middle";
-	c.font = "60px FlappyFont";
-	drawFlappyText(c, this.score, Math.floor(c.canvas.width / 2), 150);
+	c.textAlign = "left";
+	c.textBaseline = "top";
+	c.font = "30px FlappyFont";
+	drawFlappyText(c, this.score, 100, 50, "white", 2);
 }
 
 Game.prototype.drawStartUI = function(c) {
@@ -402,6 +414,14 @@ Game.prototype.drawStartUI = function(c) {
 	drawImage(c, this.imgs.tapInfo,
 		100 + c.canvas.width/2 - this.imgs.tapInfo.width/2,
 		(c.canvas.height - BIRD_START_Y) - this.imgs.tapInfo.height/2);
+}
+
+Game.prototype.drawDeathUI = function(c) {
+	c.textAlign = "center";
+	c.textBaseline = "middle";
+	c.font = "60px FlappyFont";
+	var col = "gold";
+	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 150, col);
 }
 
 Game.prototype.drawStats = function() {
