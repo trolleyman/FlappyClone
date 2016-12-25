@@ -80,6 +80,10 @@ function Game() {
 Object.defineProperty(Game.prototype, 'flappyCurrent', {
 	get: function() { return this.flappy[Math.floor(this.flappyi)]; },
 });
+Object.defineProperty(Game.prototype, 'flapButtonDown', {
+	get: function() {
+		return this.lmbDown || this.keys["Space"]; },
+});
 
 Game.prototype.mainLoop = function() {
 	window.requestAnimationFrame(this.mainLoop.bind(this));
@@ -130,7 +134,7 @@ Game.prototype.update = function() {
 	this.prevTime = now;
 	
 	// check if time to start
-	if (this.startState && this.lmbDown) {
+	if (this.startState && this.flapButtonDown) {
 		this.startState = false;
 		
 		var x = this.bird.posX + 800;
@@ -197,13 +201,13 @@ Game.prototype.updateFlappy = function(dt) {
 	
 	// bird flap logic
 	if (!this.dead) {
-		if (this.lmbDown) {
-			bird.lmbDownDt += dt;
-			if (bird.lmbDownDt <= LMB_MAX_DT) {
-				bird.velY = MAX_VEL_Y * (bird.lmbDownDt / LMB_MAX_DT);
+		if (this.flapButtonDown) {
+			bird.flapDownDt += dt;
+			if (bird.flapDownDt <= LMB_MAX_DT) {
+				bird.velY = MAX_VEL_Y * (bird.flapDownDt / LMB_MAX_DT);
 			}
 		} else {
-			bird.lmbDownDt = 0;
+			bird.flapDownDt = 0;
 		}
 	}
 	

@@ -17,7 +17,7 @@ function Bird() {
 	this.ang = calculateAngle(this.velX, this.velY);
 	this.prevAng = this.ang;
 	
-	this.lmbDownDt = 0;
+	this.flapDownDt = 0;
 	this.t = 0;
 	
 	this.dead = false;
