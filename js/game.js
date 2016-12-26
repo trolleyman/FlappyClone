@@ -6,6 +6,21 @@ const PIPE_SPACING_X = 250;
 
 const MAX_VEL_Y = 400;
 
+const STATE_START = 0;
+const STATE_PLAYING = 1;
+const STATE_PAUSED = 2;
+const STATE_DEATH = 3;
+const STATE_LEADERBOARD = 4;
+
+function stateToString(state) {
+	if (state === STATE_START) return "start";
+	else if (state === STATE_PLAYING) return "playing";
+	else if (state === STATE_PAUSED) return "paused";
+	else if (state === STATE_DEATH) return "death";
+	else if (state === STATE_LEADERBOARD) return "leaderboard";
+	else return "Invalid state: " + state;
+}
+
 function Game() {
 	// init canvas
 	this.canvas = document.getElementById("canvas");
@@ -56,8 +71,6 @@ function Game() {
 		this.imgs.deadFlappy[i] = new Image();
 		this.imgs.deadFlappy[i].src = "img/deadFlappy" + i + ".png";
 	}
-	this.flappyi = 0; // current flappy frame
-	this.flappyDt = 0.08; // seconds per flappy frame
 	this.imgs.pipe = new Image();
 	this.imgs.pipe.src = "img/pipe.png";
 	this.imgs.pipeHead = new Image();
@@ -80,48 +93,46 @@ function Game() {
 	this.imgs.buttonLeaderboard.src = "img/buttonLeaderboard.png";
 	
 	// setup buttons
+	this.buttons = [];
 	var px = 50, py = 50;
-	this.buttonPlay = new Button(px, py, this.imgs.buttonPlay, this.togglePause.bind(this));
-	this.buttonPause = new Button(px, py, this.imgs.buttonPause, this.togglePause.bind(this));
+	var setState = Object.getOwnPropertyDescriptor(Game.prototype, 'state').set;
+	this.buttonPlay  = new Button(px, py, this.imgs.buttonPlay , setState.bind(this, STATE_PLAYING));
+	this.buttonPause = new Button(px, py, this.imgs.buttonPause, setState.bind(this, STATE_PAUSED));
 	var dy = 350;
-	this.buttonRestart = new Button(this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2, dy, this.imgs.buttonRestart, this.restart.bind(this));
-	this.buttonLeaderboard = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonLeaderboard, this.restart.bind(this));
-	
-	// init vars
-	this.score = 0;
-	this.cameraX = 0;
-	this.gravity = -800;
-	this.prevTime = NaN;
-	this.paused = false;
-	this.debugView = false;
-	this.debugAllowed = false; // is debugging allowed?
-	this.cameraUpdate = true; // update the camera to be locked onto the bird?
-	this.startState = true;
-	this.deadState = false;
-	this.bestScore = getBestScore();
-	
-	// setup handling focus events
-	window.onblur = function(e) {
-		if (that.playingState)
-			that.paused = true;
-	}
-	
-	// init bird
-	this.bird = new Bird();
-	
-	// init stats
-	this.stats = document.getElementById("stats");
+	this.buttonRestart = new Button(this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2, dy, this.imgs.buttonRestart,
+		setState.bind(this, STATE_START));
+	this.buttonLeaderboard = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonLeaderboard,
+		setState.bind(this, STATE_LEADERBOARD));
 	
 	// init pipes
 	this.pipes = [];
 	for (var i = 0; i < 10; i++) {
 		this.pipes[i] = new Pipe(-200);
 	}
+	
+
+	// setup handling focus events
+	window.onblur = function(e) {
+		if (that.state === STATE_PLAYING)
+			that.state = STATE_PAUSED;
+	}
+	
+	// init stats
+	this.stats = document.getElementById("stats");
+
+	// init vars
+	this.debugAllowed = false; // is debugging allowed?
+	this.debugView = false;
+	this.cameraUpdate = true; // update the camera to be locked onto the bird?
+	this.flappyDt = 0.08; // seconds per flappy frame
+
+	// init state
+	this.state = STATE_START;
 }
 
 Object.defineProperty(Game.prototype, 'flappyCurrent', {
 	get: function() {
-		if (this.deadState)
+		if (this.deadFlappyImage)
 			return this.imgs.deadFlappy[Math.floor(this.flappyi)];
 		else
 			return this.imgs.flappy[Math.floor(this.flappyi)];
@@ -130,15 +141,78 @@ Object.defineProperty(Game.prototype, 'flappyCurrent', {
 Object.defineProperty(Game.prototype, 'flapButtonDown', {
 	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keys["Space"]; },
 });
-Object.defineProperty(Game.prototype, 'playingState', {
-	get: function() { return !this.startState && !this.deadState; },
+
+Object.defineProperty(Game.prototype, 'humanReadableState', {
+	get: function() { return stateToString(this.state); },
 });
-Object.defineProperty(Game.prototype, 'buttons', {
-	get: function() {
-		if (this.playingState && this.paused) return [this.buttonPlay];
-		else if (this.playingState && !this.paused) return [this.buttonPause];
-		else if (this.deadState) return [this.buttonRestart, this.buttonLeaderboard];
-		else return [];
+
+Object.defineProperty(Game.prototype, 'state', {
+	get: function() { return this.state_; },
+	set: function(s) {
+		const GRAVITY = -800;
+		console.log("STATE CHANGE: " + stateToString(this.state_) + " => " + stateToString(s));
+		this.state_ = s;
+		if (s === STATE_START) {
+			// vars
+			this.buttons = [];
+			this.deadFlappyImage = false;
+			this.gravity = 0;
+			this.bestScore = getBestScore();
+			this.prevTime = NaN;
+			this.score = 0;
+			this.cameraX = 0;
+			this.paused = false;
+			this.bird = new Bird();
+			this.flappyi = 0; // current flappy frame
+			this.oscillate = true;
+
+		} else if (s === STATE_PLAYING) {
+			// vars
+			this.buttons = [this.buttonPause];
+			this.deadFlappyImage = false;
+			this.gravity = GRAVITY;
+			this.oscillate = false;
+			
+			// action
+			this.prevTime = Date.now().valueOf();
+			this.paused = false;
+			
+		} else if (s === STATE_PAUSED) {
+			// vars
+			this.buttons = [this.buttonPlay];
+			this.deadFlappyImage = false;
+			this.gravity = GRAVITY;
+			this.oscillate = false;
+
+			// action
+			this.paused = true;
+			
+		} else if (s === STATE_DEATH) {
+			// vars
+			this.buttons = [this.buttonRestart, this.buttonLeaderboard];
+			this.deadFlappyImage = true;
+			this.gravity = GRAVITY;
+			this.oscillate = false;
+			if (this.score > this.bestScore) {
+				this.bestScore = this.score;
+				setBestScore(this.bestScore);
+			}
+
+			// action
+			this.bird.velY = 300;
+			this.bird.velX = 0;
+
+		} else if (s === STATE_LEADERBOARD) {
+			// vars
+			this.buttons = [];
+			this.deadFlappyImage = true;
+			this.gravity = GRAVITY;
+			this.oscillate = false;
+
+		} else {
+			console.log("Error: Invalid state: " + s);
+			this.state = STATE_START;
+		}
 	},
 });
 
@@ -162,8 +236,10 @@ Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
 		var key = this.keyDowns[i];
 		// if escape has been pressed, toggle pause setting
-		if (key === "Escape" && (this.debugAllowed || this.playingState)) {
-			this.togglePause();
+		if (key === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING)) {
+			this.paused = !this.paused;
+			if (!this.paused)
+				this.prevTime = Date.now().valueOf();
 		}
 		if (key === "Digit1" && this.debugAllowed) {
 			this.debugView = !this.debugView;
@@ -174,16 +250,6 @@ Game.prototype.processKeys = function() {
 		
 		console.log("Key pressed:", key);
 	}
-}
-
-Game.prototype.togglePause = function() {
-	this.paused = !this.paused;
-	if (!this.paused)
-		this.prevTime = Date.now().valueOf();
-}
-
-Game.prototype.restart = function() {
-	Game.bind(this)();
 }
 
 Game.prototype.update = function() {
@@ -217,9 +283,10 @@ Game.prototype.update = function() {
 	this.prevTime = now;
 	
 	// check if time to start
-	if (this.startState && this.flapButtonDown) {
-		this.startState = false;
+	if (this.state === STATE_START && this.flapButtonDown) {
+		this.state = STATE_PLAYING;
 		
+		// regen pipes
 		var x = this.bird.posX + 800;
 		for (var i = 0; i < 10; i++) {
 			this.pipes[i] = new Pipe(x);
@@ -229,14 +296,14 @@ Game.prototype.update = function() {
 	}
 	
 	// update flappy frame #
-	if (!this.deadState)
+	if (this.state === STATE_START || this.state === STATE_PLAYING)
 		this.flappyi = (this.flappyi + (dt / this.flappyDt)) % this.imgs.flappy.length;
 	
 	// update bird
 	this.updateFlappy(dt);
 	
 	// check pipes. regen if not valid. add to score if passed.
-	if (!this.startState) {
+	if (this.state !== STATE_START) {
 		for (var i = 0; i < this.pipes.length; i++) {
 			var pipe = this.pipes[i];
 			if (!pipe.passed && pipe.x + this.imgs.pipeHead.width / 2 < this.bird.posX) {
@@ -256,10 +323,9 @@ Game.prototype.update = function() {
 Game.prototype.updateFlappy = function(dt) {
 	var bird = this.bird;
 	
-	if (!this.startState)
-		bird.velY += dt * this.gravity;
-	
-	if (this.startState) {
+	bird.velY += dt * this.gravity;
+
+	if (this.oscillate) {
 		// oscillate around a point if in start mode
 		bird.t += dt;
 		bird.t %= Math.PI * 2;
@@ -272,7 +338,8 @@ Game.prototype.updateFlappy = function(dt) {
 	}
 	if (bird.posY <= h) {
 		bird.posY = h;
-		this.killFlappy();
+		if (this.state === STATE_PLAYING)
+			this.state = STATE_DEATH;
 	}
 	// if at the top of the screen
 	var ch = this.canvas.height;
@@ -291,8 +358,8 @@ Game.prototype.updateFlappy = function(dt) {
 	bird.ang = (bird.ang - bird.prevAng) * Math.min(1, 15 * dt) + bird.prevAng; // lerp
 	bird.prevAng = bird.ang;
 	
-	// bird flap logic
-	if (!this.deadState) {
+	if (this.state === STATE_START || this.state === STATE_PLAYING) {
+		// bird flap logic
 		if (this.flapButtonDown) {
 			if (!bird.flapButtonDownPrev) {
 				bird.velY = MAX_VEL_Y;
@@ -301,10 +368,8 @@ Game.prototype.updateFlappy = function(dt) {
 		} else {
 			bird.flapButtonDownPrev = false;
 		}
-	}
 	
-	// check for collisions with pipes. if a collision is found, kill the bird
-	if (!this.deadState) {
+		// check for collisions with pipes. if a collision is found, kill the bird
 		var bb = bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height);
 		for (var i = 0; i < this.pipes.length; i++) {
 			var pipe = this.pipes[i];
@@ -321,21 +386,9 @@ Game.prototype.updateFlappy = function(dt) {
 				intersected = true;
 			}
 			if (intersected) {
-				this.killFlappy();
+				this.state = STATE_DEATH;
 			}
 		}
-	}
-}
-
-Game.prototype.killFlappy = function() {
-	if (!this.deadState) {
-		this.bird.velY = 300;
-		if (this.score > this.bestScore) {
-			this.bestScore = this.score;
-			setBestScore(this.bestScore);
-		}
-		this.deadState = true;
-		this.bird.velX = 0;
 	}
 }
 
@@ -382,16 +435,20 @@ Game.prototype.draw = function() {
 
 Game.prototype.drawUI = function(c) {
 	// draw start screen
-	if (this.startState)
+	if (this.state === STATE_START)
 		this.drawStartUI(c);
 	
 	// draw score
-	if (this.playingState)
+	if (this.state === STATE_PLAYING || this.state === STATE_PAUSED)
 		this.drawPlayingUI(c);
 	
 	// draw death screen
-	if (this.deadState)
+	if (this.state === STATE_DEATH)
 		this.drawDeathUI(c);
+	
+	// draw leaderboard screen
+	if (this.state === STATE_LEADERBOARD)
+		this.drawLeaderboardUI(c);
 	
 	// draw buttons
 	var bs = this.buttons;
@@ -442,14 +499,21 @@ Game.prototype.drawDeathUI = function(c) {
 	drawFlappyText(c, this.bestScore, r, b, "white", outline);
 }
 
+Game.prototype.drawLeaderboardUI = function(c) {
+	c.textAlign = "center";
+	c.textBaseline = "middle";
+	c.font = "60px FlappyFont";
+	var titleCol = "gold";
+	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 150, titleCol);
+}
+
 Game.prototype.drawStats = function() {
 	this.stats.style.visibility = "visible";
 	
 	var html = "";
 	html += "Score: " + this.score + "<br>";
 	html += "Paused: " + this.paused + "<br>";
-	html += "Dead: " + this.deadState + "<br>";
-	html += "StartState: " + this.startState + "<br>";
+	html += "State: " + this.humanReadableState + "<br>";
 	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
 	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
 	html += "VelX: " + this.bird.velX.toFixed(2) + "<br>";
@@ -474,7 +538,7 @@ Game.prototype.drawFlappy = function(c) {
 		c.stroke();
 		
 		// draw path
-		if (!this.startState) {
+		if (this.state !== STATE_START) {
 			c.beginPath();
 			c.moveTo(x, y);
 			var stepSize = 10;
