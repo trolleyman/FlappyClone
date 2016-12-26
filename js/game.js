@@ -430,15 +430,16 @@ Game.prototype.drawDeathUI = function(c) {
 	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 150, titleCol);
 	
 	c.font = "30px FlappyFont";
-	var diff = 80;
+	var diff = 70;
 	var l = c.canvas.width/2 - diff;
 	var r = c.canvas.width/2 + diff;
 	var t = 240;
 	var b = 290;
-	drawFlappyText(c, "Score", l, t, "white", 3);
-	drawFlappyText(c, "Best" , r, t, "white", 3);
-	drawFlappyText(c, this.score    , l, b, "white", 3);
-	drawFlappyText(c, this.bestScore, r, b, "white", 3);
+	var outline = 3;
+	drawFlappyText(c, "Score", l, t, "white", outline);
+	drawFlappyText(c, "Best" , r, t, "white", outline);
+	drawFlappyText(c, this.score    , l, b, "white", outline);
+	drawFlappyText(c, this.bestScore, r, b, "white", outline);
 }
 
 Game.prototype.drawStats = function() {
