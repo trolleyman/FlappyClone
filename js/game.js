@@ -83,7 +83,7 @@ function Game() {
 	var px = 50, py = 50;
 	this.buttonPlay = new Button(px, py, this.imgs.buttonPlay, this.togglePause.bind(this));
 	this.buttonPause = new Button(px, py, this.imgs.buttonPause, this.togglePause.bind(this));
-	var dy = 300;
+	var dy = 350;
 	this.buttonRestart = new Button(this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2, dy, this.imgs.buttonRestart, this.restart.bind(this));
 	this.buttonLeaderboard = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonLeaderboard, this.restart.bind(this));
 	
@@ -98,6 +98,7 @@ function Game() {
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.startState = true;
 	this.deadState = false;
+	this.bestScore = getBestScore();
 	
 	// setup handling focus events
 	window.onblur = function(e) {
@@ -327,10 +328,15 @@ Game.prototype.updateFlappy = function(dt) {
 }
 
 Game.prototype.killFlappy = function() {
-	if (!this.deadState)
+	if (!this.deadState) {
 		this.bird.velY = 300;
-	this.bird.velX = 0;
-	this.deadState = true;
+		if (this.score > this.bestScore) {
+			this.bestScore = this.score;
+			setBestScore(this.bestScore);
+		}
+		this.deadState = true;
+		this.bird.velX = 0;
+	}
 }
 
 Game.prototype.draw = function() {
@@ -381,7 +387,7 @@ Game.prototype.drawUI = function(c) {
 	
 	// draw score
 	if (this.playingState)
-		this.drawScore(c);
+		this.drawPlayingUI(c);
 	
 	// draw death screen
 	if (this.deadState)
@@ -395,7 +401,7 @@ Game.prototype.drawUI = function(c) {
 	}
 }
 
-Game.prototype.drawScore = function(c) {
+Game.prototype.drawPlayingUI = function(c) {
 	c.textAlign = "left";
 	c.textBaseline = "top";
 	c.font = "30px FlappyFont";
@@ -420,8 +426,19 @@ Game.prototype.drawDeathUI = function(c) {
 	c.textAlign = "center";
 	c.textBaseline = "middle";
 	c.font = "60px FlappyFont";
-	var col = "gold";
-	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 150, col);
+	var titleCol = "gold";
+	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 150, titleCol);
+	
+	c.font = "30px FlappyFont";
+	var diff = 80;
+	var l = c.canvas.width/2 - diff;
+	var r = c.canvas.width/2 + diff;
+	var t = 240;
+	var b = 290;
+	drawFlappyText(c, "Score", l, t, "white", 3);
+	drawFlappyText(c, "Best" , r, t, "white", 3);
+	drawFlappyText(c, this.score    , l, b, "white", 3);
+	drawFlappyText(c, this.bestScore, r, b, "white", 3);
 }
 
 Game.prototype.drawStats = function() {
