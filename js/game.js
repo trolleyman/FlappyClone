@@ -77,7 +77,7 @@ function Game() {
 	}).bind(this);
 	this.imgs.buttonRestart.src = "img/buttonRestart.png";
 	this.imgs.buttonLeaderboard = new Image();
-	this.imgs.buttonLeaderboard.src = "img/buttonRestart.png";
+	this.imgs.buttonLeaderboard.src = "img/buttonLeaderboard.png";
 	
 	// setup buttons
 	var px = 50, py = 50;
