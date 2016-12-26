@@ -94,7 +94,7 @@ function Game() {
 	this.prevTime = NaN;
 	this.paused = false;
 	this.debugView = false;
-	this.debugAllowed = true; // is debugging allowed?
+	this.debugAllowed = false; // is debugging allowed?
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.startState = true;
 	this.deadState = false;
