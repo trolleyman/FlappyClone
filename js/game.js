@@ -61,6 +61,21 @@ function Game() {
 		that.keyDowns[that.keyDowns.length] = e.code;
 	}
 	
+	// setup font loading
+	this.flappyFontLoaded = false;
+	FontFaceOnload("FlappyFont", {
+		success: (function() {
+			console.log("FlappyFont loaded.");
+			this.flappyFontLoaded = true;
+			this.notifyLoadedFont();
+		}).bind(this),
+		error: (function() {
+			console.log("FlappyFont could not be downloaded.");
+			this.flappyFontLoaded = true;
+			this.notifyLoadedFont();
+		}).bind(this),
+	});
+	
 	// load images
 	this.imgs = {};
 	this.imgs.bg = this.loadImage("img/background.png");
@@ -145,18 +160,25 @@ Game.prototype.loadImage = function(path) {
 }
 
 Game.prototype.notfiyLoadedImage = function() {
-	if (typeof this.imagesLoaded === "undefined")
-		this.imagesLoaded = 0;
-	this.imagesLoaded += 1;
+	if (typeof this.imagesLoadedNum === "undefined")
+		this.imagesLoadedNum = 0;
+	this.imagesLoadedNum += 1;
 	
-	if (this.imagesLoaded == this.imagesLoadedMax) {
-		this.finishLoading();
-		console.log(this.imagesLoaded + " images loaded.");
+	if (this.imagesLoaded) {
+		this.finishImageLoading();
+		console.log(this.imagesLoadedNum + " images loaded.");
+		if (this.flappyFontLoaded)
+			this.state = STATE_START;
+	}
+}
+
+Game.prototype.notifyLoadedFont = function() {
+	if (this.imagesLoaded) {
 		this.state = STATE_START;
 	}
 }
 
-Game.prototype.finishLoading = function() {
+Game.prototype.finishImageLoading = function() {
 	var spacing = 20;
 	var w = spacing + this.imgs.buttonRestart.width + this.imgs.buttonLeaderboard.width;
 	var x = this.canvas.width/2 - w/2;
@@ -164,6 +186,10 @@ Game.prototype.finishLoading = function() {
 	this.buttonLeaderboard.x = x + this.imgs.buttonRestart.width + spacing;
 	this.buttonRestart2.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
 }
+
+Object.defineProperty(Game.prototype, 'imagesLoaded', {
+	get: function() { return this.imagesLoadedNum === this.imagesLoadedMax; },
+});
 
 Object.defineProperty(Game.prototype, 'flappyCurrent', {
 	get: function() {
@@ -193,9 +219,11 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.buttons = [];
 			this.bird = new Bird();
 			this.paused = true; // no updates
+			this.flappyi = 0;
 			this.regenPipes = false;
 			this.cameraUpdate = false;
 			this.flappyVisible = false;
+			this.groundVisible = false;
 
 		} else if (s === STATE_START) {
 			this.buttons = [];
@@ -211,6 +239,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.regenPipes = false;
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
+			this.groundVisible = true;
 			for (var i = 0; i < this.pipes.length; i++) {
 				this.pipes[i] = new Pipe(-200);
 			}
@@ -225,6 +254,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.prevTime = NaN; // we could have come from the paused state, we need to update prevTime
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
+			this.groundVisible = true;
 			
 		} else if (s === STATE_PAUSED) {
 			this.buttons = [this.buttonPlay];
@@ -235,6 +265,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.paused = true;
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
+			this.groundVisible = true;
 			
 		} else if (s === STATE_DEATH) {
 			this.buttons = [this.buttonRestart1, this.buttonLeaderboard];
@@ -245,6 +276,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.newBestScore = false;
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
+			this.groundVisible = true;
 			if (this.score > this.bestScore) {
 				this.bestScore = this.score;
 				this.newBestScore = true;
@@ -263,6 +295,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.loading = true;
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
+			this.groundVisible = true;
 			getLeaderboard((function(leaderboard) {
 				this.leaderboard = leaderboard;
 				this.loading = false;
@@ -498,21 +531,23 @@ Game.prototype.draw = function() {
 		this.stats.style.visibility = "hidden";
 	}
 	
-	// draw blank background first
-	drawImageTiled(c, this.imgs.bgBlank);
-	// draw textured background
-	var offsetBg = -this.imgs.bg.width - ((this.cameraX / 2) % this.imgs.bg.width);
-	drawImageTiled(c, this.imgs.bg, offsetBg, c.canvas.height - this.imgs.bg.height, undefined, 1);
-	
-	// draw pipes
-	for (var i = 0; i < this.pipes.length; i++) {
-		this.drawPipe(c, this.pipes[i]);
+	if (this.groundVisible) {
+		// draw blank background first
+		drawImageTiled(c, this.imgs.bgBlank);
+		// draw textured background
+		var offsetBg = -this.imgs.bg.width - ((this.cameraX / 2) % this.imgs.bg.width);
+		drawImageTiled(c, this.imgs.bg, offsetBg, c.canvas.height - this.imgs.bg.height, undefined, 1);
+
+		// draw pipes
+		for (var i = 0; i < this.pipes.length; i++) {
+			this.drawPipe(c, this.pipes[i]);
+		}
+
+		// draw ground
+		var offsetGround = -this.imgs.ground.width - (this.cameraX % this.imgs.ground.width);
+		drawImageTiled(c, this.imgs.ground, offsetGround, c.canvas.height - this.imgs.ground.height, undefined, 1);
 	}
-	
-	// draw ground
-	var offsetGround = -this.imgs.ground.width - (this.cameraX % this.imgs.ground.width);
-	drawImageTiled(c, this.imgs.ground, offsetGround, c.canvas.height - this.imgs.ground.height, undefined, 1);
-	
+
 	// draw flappy bird
 	if (this.flappyVisible)
 		this.drawFlappy(c);
@@ -553,7 +588,7 @@ Game.prototype.drawUI = function(c) {
 Game.prototype.drawLoadingUI = function(c) {
 	var x = c.canvas.width/2;
 	var y = c.canvas.height/2;
-	this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
+	//this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
 }
 
 Game.prototype.drawPlayingUI = function(c) {
