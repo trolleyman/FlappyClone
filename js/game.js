@@ -4,8 +4,6 @@ const CAMERA_OFFSET_X = 100;
 const BIRD_OFFSET_Y = 100;
 const PIPE_SPACING_X = 250;
 
-const NUM_LEADERBOARD_ENTRIES = 10;
-
 const MAX_VEL_Y = 400;
 
 const STATE_LOADING = 0;
@@ -115,7 +113,7 @@ function Game() {
 	
 	var submitFunction = (function() {
 		var name = this.text;
-		if (!isValidName(name)) {
+		if (!isLegalName(name)) {
 			console.log("'" + name + "' is not a valid name.");
 			return;
 		}
@@ -136,7 +134,7 @@ function Game() {
 	var disableFunction = (function() {
 		if (!this.newBestScore
 			|| this.leaderboardLoading
-			|| !isValidName(this.text)
+			|| !isLegalName(this.text)
 			|| this.submitting || this.submitted)
 			return true;
 		return false;
@@ -314,6 +312,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			if (this.score > this.bestScore) {
 				this.bestScore = this.score;
 				this.newBestScore = true;
+				this.submitted = false;
 				setBestScore(this.bestScore);
 			}
 			this.bird.velY = 300;
@@ -348,20 +347,7 @@ Object.defineProperty(Game.prototype, 'state', {
 					if (pos !== -1) {
 						this.leaderboardPos = pos;
 						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
-						var legalChar = function(c) {
-							if (c.charCodeAt(0) >= 'a'.charCodeAt(0) && c.charCodeAt(0) <= 'z'.charCodeAt(0)) {
-								// lowercase chars
-								return true;
-							} else if (c.charCodeAt(0) >= 'A'.charCodeAt(0) && c.charCodeAt(0) <= 'Z'.charCodeAt(0)) {
-								// uppercase chars
-								return true;
-							} else if (c.charCodeAt(0) >= '1'.charCodeAt(0) && c.charCodeAt(0) <= '9'.charCodeAt(0)) {
-								// digits
-								return true;
-							}
-							return false;
-						};
-						this.beginTextEntryMode(MAX_NAME_LENGTH, legalChar);
+						this.beginTextEntryMode(MAX_NAME_LENGTH, isLegalNameChar);
 					}
 				}
 			}).bind(this));
@@ -480,7 +466,7 @@ Game.prototype.processKeys = function() {
 			this.cameraUpdate = !this.cameraUpdate;
 		}
 		
-		console.log("Key pressed: " + key + " (" + code + ")");
+		console.log("Key pressed: '" + key + "' (" + code + ")");
 		
 		if (this.textEntry) {
 			if (key.length === 1) {
