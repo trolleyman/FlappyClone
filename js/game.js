@@ -90,7 +90,10 @@ function Game() {
 	var spacing = 20;
 	this.imgs.buttonRestart = new Image();
 	this.imgs.buttonRestart.onload = (function() {
-		this.buttonRestart1.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
+		var w = spacing + this.imgs.buttonRestart.width + this.imgs.buttonLeaderboard.width;
+		var x = this.canvas.width/2 - w/2;
+		this.buttonRestart1.x = x;
+		this.buttonLeaderboard.x = x + this.imgs.buttonRestart.width + spacing;
 		this.buttonRestart2.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
 	}).bind(this);
 	this.imgs.buttonRestart.src = "img/buttonRestart.png";
@@ -104,12 +107,12 @@ function Game() {
 	var setState = Object.getOwnPropertyDescriptor(Game.prototype, 'state').set;
 	this.buttonPlay  = new Button(px, py, this.imgs.buttonPlay , setState.bind(this, STATE_PLAYING));
 	this.buttonPause = new Button(px, py, this.imgs.buttonPause, setState.bind(this, STATE_PAUSED));
-	var dy = 350;
+	var dy = 400;
 	this.buttonRestart1 = new Button(0, dy, this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
-	this.buttonLeaderboard = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonLeaderboard,
+	this.buttonLeaderboard = new Button(0, dy, this.imgs.buttonLeaderboard,
 		setState.bind(this, STATE_LEADERBOARD));
-	dy = 680;
+	dy = 650;
 	this.buttonRestart2 = new Button(0, dy, this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
 	this.buttonSubmit = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonSubmit,
@@ -503,14 +506,14 @@ Game.prototype.drawDeathUI = function(c) {
 	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var titleCol = "gold";
-	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 150, titleCol);
+	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 200, titleCol);
 	
 	c.font = "30px FlappyFont";
 	var diff = 70;
 	var l = Math.floor(c.canvas.width/2 - diff);
 	var r = Math.floor(c.canvas.width/2 + diff);
-	var t = 240;
-	var b = 290;
+	var t = 290;
+	var b = 340;
 	var outline = 3;
 	drawFlappyText(c, "Score", l, t, "white", outline);
 	drawFlappyText(c, "Best" , r, t, "white", outline);
@@ -526,7 +529,7 @@ Game.prototype.drawLeaderboardUI = function(c) {
 	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var titleCol = "gold";
-	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 100, titleCol);
+	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 110, titleCol);
 	if (this.loading) {
 		var x = c.canvas.width/2;
 		var y = 380;

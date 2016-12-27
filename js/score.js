@@ -32,6 +32,7 @@ function getLeaderboard(callback) {
 }
 
 // Takes a callback that is triggered when the score has been submitted.
-function submitBestScore(callback) {
+function submitBestScore(score, callback) {
 	setTimeout(callback, 2000, true);
+	console.log("submitted best score: " + score);
 }
