@@ -108,7 +108,7 @@ function Game() {
 		setState.bind(this, STATE_START));
 	this.buttonLeaderboard = new Button(0, dy, this.imgs.buttonLeaderboard,
 		setState.bind(this, STATE_LEADERBOARD));
-	dy = 650;
+	dy = 670;
 	var spacing = 20;
 	this.buttonRestart2 = new Button(0, dy, this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
@@ -811,6 +811,16 @@ Game.prototype.drawLeaderboard = function(c) {
 	c.textBaseline = "top";
 	c.font = "30px FlappyFont";
 	
+	var spacing = 13;
+	var x = c.canvas.width - 140;
+	var y = 200;
+	var titleCol = "gold";
+	c.textAlign = "right";
+	drawFlappyText(c, "NAME", x - spacing, y, titleCol, 3);
+	drawFlappyText(c, "#", 60, y, titleCol, 3);
+	c.textAlign = "left";
+	drawFlappyText(c, "SCORE", x + spacing, y, titleCol, 3);
+	
 	for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
 		var e = this.leaderboard[i];
 		if (typeof e === "undefined")
@@ -822,9 +832,7 @@ Game.prototype.drawLeaderboard = function(c) {
 			col = "gold";
 		}
 		
-		var x = c.canvas.width - 140;
-		var spacing = 20;
-		var y = 220 + 40 * i;
+		y += 40;
 		c.textAlign = "right";
 		if (this.textEntry && e.user) {
 			var start = this.text.substring(0, this.textPos);
