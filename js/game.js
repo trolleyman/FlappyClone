@@ -111,6 +111,10 @@ function Game() {
 		if (that.state === STATE_PLAYING)
 			that.state = STATE_PAUSED;
 	}
+	window.onfocus = function(e) {
+		if (that.state !== STATE_PAUSED)
+			that.unpause();
+	}
 	
 	// init stats
 	this.stats = document.getElementById("stats");
@@ -292,7 +296,7 @@ Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
 		var key = this.keyDowns[i];
 		// if escape has been pressed, toggle pause setting
-		if (key === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING)) {
+		if (key === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING || this.state === STATE_PAUSED)) {
 			this.togglePause();
 		}
 		if (key === "Digit1" && this.debugAllowed) {
@@ -311,6 +315,15 @@ Game.prototype.pause = function() {
 		this.state = STATE_PAUSED;
 	} else {
 		this.paused = true;
+	}
+}
+
+Game.prototype.unpause = function() {
+	if (this.state === STATE_PAUSED) {
+		this.state = STATE_PLAYING;
+	} else {
+		this.paused = false;
+		this.prevTime = NaN;
 	}
 }
 
