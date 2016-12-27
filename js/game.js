@@ -8,17 +8,19 @@ const NUM_LEADERBOARD_ENTRIES = 10;
 
 const MAX_VEL_Y = 400;
 
-const STATE_START = 0;
-const STATE_PLAYING = 1;
-const STATE_PAUSED = 2;
-const STATE_DEATH = 3;
-const STATE_LEADERBOARD = 4;
+const STATE_LOADING = 0;
+const STATE_START = 1;
+const STATE_PLAYING = 2;
+const STATE_PAUSED = 3;
+const STATE_DEATH = 4;
+const STATE_LEADERBOARD = 5;
 
 function stateToString(state) {
-	if (state === STATE_START) return "STATE_START";
-	else if (state === STATE_PLAYING) return "STATE_PLAYING";
-	else if (state === STATE_PAUSED) return "STATE_PAUSED";
-	else if (state === STATE_DEATH) return "STATE_DEATH";
+	     if (state === STATE_LOADING)     return "STATE_LOADING";
+	else if (state === STATE_START)       return "STATE_START";
+	else if (state === STATE_PLAYING)     return "STATE_PLAYING";
+	else if (state === STATE_PAUSED)      return "STATE_PAUSED";
+	else if (state === STATE_DEATH)       return "STATE_DEATH";
 	else if (state === STATE_LEADERBOARD) return "STATE_LEADERBOARD";
 	else return "Invalid state: " + state;
 }
@@ -61,46 +63,24 @@ function Game() {
 	
 	// load images
 	this.imgs = {};
-	this.imgs.bg = new Image();
-	this.imgs.bg.src = "img/background.png";
-	this.imgs.bgBlank = new Image();
-	this.imgs.bgBlank.src = "img/backgroundBlank.png";
+	this.imgs.bg = this.loadImage("img/background.png");
+	this.imgs.bgBlank = this.loadImage("img/backgroundBlank.png");
 	this.imgs.flappy = [];
 	this.imgs.deadFlappy = [];
 	for (var i = 0; i < 4; i++) {
-		this.imgs.flappy[i] = new Image();
-		this.imgs.flappy[i].src = "img/flappy" + i + ".png";
-		this.imgs.deadFlappy[i] = new Image();
-		this.imgs.deadFlappy[i].src = "img/deadFlappy" + i + ".png";
+		this.imgs.flappy[i] = this.loadImage("img/flappy" + i + ".png");
+		this.imgs.deadFlappy[i] = this.loadImage("img/deadFlappy" + i + ".png");
 	}
-	this.imgs.pipe = new Image();
-	this.imgs.pipe.src = "img/pipe.png";
-	this.imgs.pipeHead = new Image();
-	this.imgs.pipeHead.src = "img/pipeHead.png";
-	this.imgs.ground = new Image();
-	this.imgs.ground.src = "img/ground.png";
-	this.imgs.tapInfo = new Image();
-	this.imgs.tapInfo.src = "img/tapInfo.png";
-	this.imgs.new = new Image();
-	this.imgs.new.src = "img/new.png";
-	this.imgs.buttonPlay = new Image();
-	this.imgs.buttonPlay.src = "img/buttonPlay.png";
-	this.imgs.buttonPause = new Image();
-	this.imgs.buttonPause.src = "img/buttonPause.png";
-	var spacing = 20;
-	this.imgs.buttonRestart = new Image();
-	this.imgs.buttonRestart.onload = (function() {
-		var w = spacing + this.imgs.buttonRestart.width + this.imgs.buttonLeaderboard.width;
-		var x = this.canvas.width/2 - w/2;
-		this.buttonRestart1.x = x;
-		this.buttonLeaderboard.x = x + this.imgs.buttonRestart.width + spacing;
-		this.buttonRestart2.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
-	}).bind(this);
-	this.imgs.buttonRestart.src = "img/buttonRestart.png";
-	this.imgs.buttonLeaderboard = new Image();
-	this.imgs.buttonLeaderboard.src = "img/buttonLeaderboard.png";
-	this.imgs.buttonSubmit = new Image();
-	this.imgs.buttonSubmit.src = "img/buttonSubmit.png";
+	this.imgs.pipe = this.loadImage("img/pipe.png");
+	this.imgs.pipeHead = this.loadImage("img/pipeHead.png");
+	this.imgs.ground = this.loadImage("img/ground.png");
+	this.imgs.tapInfo = this.loadImage("img/tapInfo.png");
+	this.imgs.new = this.loadImage("img/new.png");
+	this.imgs.buttonPlay = this.loadImage("img/buttonPlay.png");
+	this.imgs.buttonPause = this.loadImage("img/buttonPause.png");
+	this.imgs.buttonRestart = this.loadImage("img/buttonRestart.png");
+	this.imgs.buttonLeaderboard = this.loadImage("img/buttonLeaderboard.png");
+	this.imgs.buttonSubmit = this.loadImage("img/buttonSubmit.png");
 
 	// setup buttons
 	var px = 50, py = 50;
@@ -113,6 +93,7 @@ function Game() {
 	this.buttonLeaderboard = new Button(0, dy, this.imgs.buttonLeaderboard,
 		setState.bind(this, STATE_LEADERBOARD));
 	dy = 650;
+	var spacing = 20;
 	this.buttonRestart2 = new Button(0, dy, this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
 	this.buttonSubmit = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonSubmit,
@@ -126,6 +107,7 @@ function Game() {
 	
 	// setup handling focus events
 	window.onblur = function(e) {
+		that.pause();
 		if (that.state === STATE_PLAYING)
 			that.state = STATE_PAUSED;
 	}
@@ -138,9 +120,45 @@ function Game() {
 	this.debugView = false;
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.flappyDt = 0.08; // seconds per flappy frame
+	this.paused = false;
+	this.cameraX = 0;
 	
 	// init state
-	this.state = STATE_START;
+	this.state = STATE_LOADING;
+}
+
+Game.prototype.loadImage = function(path) {
+	if (typeof this.imagesLoadedMax === "undefined")
+		this.imagesLoadedMax = 0;
+	this.imagesLoadedMax += 1;
+	
+	var img = new Image();
+	img.onload = (function() {
+		this.notfiyLoadedImage();
+	}).bind(this);
+	img.src = path;
+	return img;
+}
+
+Game.prototype.notfiyLoadedImage = function() {
+	if (typeof this.imagesLoaded === "undefined")
+		this.imagesLoaded = 0;
+	this.imagesLoaded += 1;
+	
+	if (this.imagesLoaded == this.imagesLoadedMax) {
+		this.finishLoading();
+		console.log(this.imagesLoaded + " images loaded.");
+		this.state = STATE_START;
+	}
+}
+
+Game.prototype.finishLoading = function() {
+	var spacing = 20;
+	var w = spacing + this.imgs.buttonRestart.width + this.imgs.buttonLeaderboard.width;
+	var x = this.canvas.width/2 - w/2;
+	this.buttonRestart1.x = x;
+	this.buttonLeaderboard.x = x + this.imgs.buttonRestart.width + spacing;
+	this.buttonRestart2.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
 }
 
 Object.defineProperty(Game.prototype, 'flappyCurrent', {
@@ -151,6 +169,7 @@ Object.defineProperty(Game.prototype, 'flappyCurrent', {
 			return this.imgs.flappy[Math.floor(this.flappyi)];
 	},
 });
+
 Object.defineProperty(Game.prototype, 'flapButtonDown', {
 	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keys["Space"]; },
 });
@@ -166,48 +185,62 @@ Object.defineProperty(Game.prototype, 'state', {
 		console.log("STATE CHANGE: " + stateToString(this.state_) + " => " + stateToString(s));
 		this.stateChangeTime = Date.now().valueOf();
 		this.state_ = s;
-		if (s === STATE_START) {
-			// vars
+		if (s === STATE_LOADING) {
+			this.buttons = [];
+			this.bird = new Bird();
+			this.paused = true; // no updates
+			this.regenPipes = false;
+			this.cameraUpdate = false;
+			this.flappyVisible = false;
+
+		} else if (s === STATE_START) {
 			this.buttons = [];
 			this.deadFlappyImage = false;
 			this.gravity = 0;
 			this.bestScore = getBestScore();
-			this.prevTime = NaN;
+			this.prevTime = NaN; // clear prevTime
 			this.score = 0;
-			this.cameraX = 0;
 			this.paused = false;
 			this.bird = new Bird();
-			this.flappyi = 0; // current flappy frame
+			this.flappyi = 0;
 			this.oscillate = true;
 			this.regenPipes = false;
-
+			this.cameraUpdate = true;
+			this.flappyVisible = true;
+			for (var i = 0; i < this.pipes.length; i++) {
+				this.pipes[i] = new Pipe(-200);
+			}
+			
 		} else if (s === STATE_PLAYING) {
-			// vars
 			this.buttons = [this.buttonPause];
 			this.deadFlappyImage = false;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
 			this.regenPipes = true;
 			this.paused = false;
-			this.prevTime = NaN;
+			this.prevTime = NaN; // we could have come from the paused state, we need to update prevTime
+			this.cameraUpdate = true;
+			this.flappyVisible = true;
 			
 		} else if (s === STATE_PAUSED) {
-			// vars
 			this.buttons = [this.buttonPlay];
 			this.deadFlappyImage = false;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
 			this.regenPipes = true;
 			this.paused = true;
+			this.cameraUpdate = true;
+			this.flappyVisible = true;
 			
 		} else if (s === STATE_DEATH) {
-			// vars
 			this.buttons = [this.buttonRestart1, this.buttonLeaderboard];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
 			this.regenPipes = true;
 			this.newBestScore = false;
+			this.cameraUpdate = true;
+			this.flappyVisible = true;
 			if (this.score > this.bestScore) {
 				this.bestScore = this.score;
 				this.newBestScore = true;
@@ -217,7 +250,6 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.bird.velX = 0;
 			
 		} else if (s === STATE_LEADERBOARD) {
-			// vars
 			this.buttons = [this.buttonRestart2, this.buttonSubmit];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
@@ -225,6 +257,8 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.regenPipes = true;
 			this.leaderboard = [];
 			this.loading = true;
+			this.cameraUpdate = true;
+			this.flappyVisible = true;
 			getLeaderboard((function(leaderboard) {
 				this.leaderboard = leaderboard;
 				this.loading = false;
@@ -259,9 +293,7 @@ Game.prototype.processKeys = function() {
 		var key = this.keyDowns[i];
 		// if escape has been pressed, toggle pause setting
 		if (key === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING)) {
-			this.paused = !this.paused;
-			if (!this.paused)
-				this.prevTime = Date.now().valueOf();
+			this.togglePause();
 		}
 		if (key === "Digit1" && this.debugAllowed) {
 			this.debugView = !this.debugView;
@@ -271,6 +303,26 @@ Game.prototype.processKeys = function() {
 		}
 		
 		console.log("Key pressed:", key);
+	}
+}
+
+Game.prototype.pause = function() {
+	if (this.state === STATE_PLAYING) {
+		this.state = STATE_PAUSED;
+	} else {
+		this.paused = true;
+	}
+}
+
+Game.prototype.togglePause = function() {
+	if (this.state === STATE_PLAYING) {
+		this.state = STATE_PAUSED;
+	} else if (this.state === STATE_PAUSED) {
+		this.state = STATE_PLAYING;
+	} else {
+		this.paused = !this.paused;
+		if (!this.paused)
+			this.prevTime = NaN;
 	}
 }
 
@@ -449,13 +501,18 @@ Game.prototype.draw = function() {
 	drawImageTiled(c, this.imgs.ground, offsetGround, c.canvas.height - this.imgs.ground.height, undefined, 1);
 	
 	// draw flappy bird
-	this.drawFlappy(c);
+	if (this.flappyVisible)
+		this.drawFlappy(c);
 
 	// draw score
 	this.drawUI(c);
 };
 
 Game.prototype.drawUI = function(c) {
+	// draw loading screen
+	if (this.state === STATE_LOADING)
+		this.drawLoadingUI(c);
+	
 	// draw start screen
 	if (this.state === STATE_START)
 		this.drawStartUI(c);
@@ -478,6 +535,12 @@ Game.prototype.drawUI = function(c) {
 		var btn = bs[i];
 		btn.draw(c);
 	}
+}
+
+Game.prototype.drawLoadingUI = function(c) {
+	var x = c.canvas.width/2;
+	var y = c.canvas.height/2;
+	this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
 }
 
 Game.prototype.drawPlayingUI = function(c) {
@@ -533,7 +596,7 @@ Game.prototype.drawLeaderboardUI = function(c) {
 	if (this.loading) {
 		var x = c.canvas.width/2;
 		var y = 380;
-		this.drawLoading(c, this.stateChangeDt, x, y);
+		this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
 	} else if (this.leaderboardError) {
 		// TODO: display error
 	} else {
@@ -561,7 +624,7 @@ Game.prototype.drawLeaderboard = function(c) {
 	}
 }
 
-Game.prototype.drawLoading = function(c, dt, x, y) {
+Game.prototype.drawLoadingAnimation = function(c, dt, x, y) {
 	var ang = (5 * dt) % (2 * Math.PI);
 	var i = (15 * dt) % this.imgs.flappy.length;
 	var dots = Math.floor(((2 * dt) % 3) + 1);
