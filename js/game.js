@@ -122,13 +122,12 @@ function Game() {
 		console.log("Submitting best score for '" + name + "': " + this.bestScore);
 		this.submitting = true;
 		this.submitted = false;
+		this.endTextEntryMode();
+		this.leaderboard[this.leaderboardPos].name = name;
 		submitBestScore(name, this.bestScore, (function() {
 			console.log("Submitted score.");
 			this.submitting = false;
 			this.submitted = true;
-			this.leaderboard[this.leaderboardPos].user = false;
-			this.leaderboard[this.leaderboardPos].name = name;
-			this.endTextEntryMode();
 		}).bind(this), (function(error) {
 			console.log("error submitting score: " + error); // TODO
 		}).bind(this));
@@ -818,28 +817,29 @@ Game.prototype.drawLeaderboard = function(c) {
 			break;
 		
 		var col = "white";
-		var hide = false;
+		var hide = hide = Math.floor((5 * this.stateChangeDt) % 3) === 0;
 		if (e.user) {
 			col = "gold";
-			if (Math.floor((5 * this.stateChangeDt) % 3) === 0)
-				hide = true;
 		}
 		
 		var x = c.canvas.width - 140;
 		var spacing = 20;
 		var y = 220 + 40 * i;
 		c.textAlign = "right";
-		if (e.user) {
+		if (this.textEntry && e.user) {
 			var start = this.text.substring(0, this.textPos);
 			var end = this.text.substring(this.textPos, this.text.length);
 			var chr = "|";
 			if (hide)
 				chr = "\u2008";
+			
 			var txt = start + chr + end;
-
 			drawFlappyText(c, txt, x - spacing, y, col, 3);
-			if (!hide)
-				drawFlappyText(c, "", x - spacing, y, col, 3);
+		} else if (this.submitting && e.user) {
+			var dots = Math.floor(((2 * this.stateChangeDt) % 3) + 1);
+			var text = ".".repeat(dots);
+			
+			drawFlappyText(c, text, x - spacing, y, col, 3);
 		} else {
 			drawFlappyText(c, e.name, x - spacing, y, col, 3);
 		}

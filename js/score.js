@@ -26,11 +26,11 @@ function getLeaderboard(callback) {
 		{name:"baby", score:30},
 		{name:"hello", score:27},
 		{name:"my", score:24},
-		//{name:"darlin", score:23},
-		//{name:"hello", score:22},
-		//{name:"my", score:22},
-		//{name:"ragtime", score:10},
-		//{name:"gal", score:3},
+		{name:"darlin", score:23},
+		{name:"hello", score:22},
+		{name:"my", score:22},
+		{name:"ragtime", score:3},
+		{name:"gal", score:1},
 	];
 	setTimeout(callback, 2000, leaderboard);
 }
@@ -48,6 +48,6 @@ function isValidName(name) {
 
 // Takes a callback that is triggered when the score has been submitted.
 function submitBestScore(name, score, successCallback, errorCallback) {
-	setTimeout(successCallback, 2000, true);
+	setTimeout(successCallback, 5000);
 	console.log("submitted best score: " + score);
 }
