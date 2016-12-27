@@ -4,6 +4,8 @@ const CAMERA_OFFSET_X = 100;
 const BIRD_OFFSET_Y = 100;
 const PIPE_SPACING_X = 250;
 
+const NUM_LEADERBOARD_ENTRIES = 10;
+
 const MAX_VEL_Y = 400;
 
 const STATE_START = 0;
@@ -13,11 +15,11 @@ const STATE_DEATH = 3;
 const STATE_LEADERBOARD = 4;
 
 function stateToString(state) {
-	if (state === STATE_START) return "start";
-	else if (state === STATE_PLAYING) return "playing";
-	else if (state === STATE_PAUSED) return "paused";
-	else if (state === STATE_DEATH) return "death";
-	else if (state === STATE_LEADERBOARD) return "leaderboard";
+	if (state === STATE_START) return "STATE_START";
+	else if (state === STATE_PLAYING) return "STATE_PLAYING";
+	else if (state === STATE_PAUSED) return "STATE_PAUSED";
+	else if (state === STATE_DEATH) return "STATE_DEATH";
+	else if (state === STATE_LEADERBOARD) return "STATE_LEADERBOARD";
 	else return "Invalid state: " + state;
 }
 
@@ -79,6 +81,8 @@ function Game() {
 	this.imgs.ground.src = "img/ground.png";
 	this.imgs.tapInfo = new Image();
 	this.imgs.tapInfo.src = "img/tapInfo.png";
+	this.imgs.new = new Image();
+	this.imgs.new.src = "img/new.png";
 	this.imgs.buttonPlay = new Image();
 	this.imgs.buttonPlay.src = "img/buttonPlay.png";
 	this.imgs.buttonPause = new Image();
@@ -86,31 +90,37 @@ function Game() {
 	var spacing = 20;
 	this.imgs.buttonRestart = new Image();
 	this.imgs.buttonRestart.onload = (function() {
-		this.buttonRestart.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
+		this.buttonRestart1.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
+		this.buttonRestart2.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
 	}).bind(this);
 	this.imgs.buttonRestart.src = "img/buttonRestart.png";
 	this.imgs.buttonLeaderboard = new Image();
 	this.imgs.buttonLeaderboard.src = "img/buttonLeaderboard.png";
-	
+	this.imgs.buttonSubmit = new Image();
+	this.imgs.buttonSubmit.src = "img/buttonSubmit.png";
+
 	// setup buttons
-	this.buttons = [];
 	var px = 50, py = 50;
 	var setState = Object.getOwnPropertyDescriptor(Game.prototype, 'state').set;
 	this.buttonPlay  = new Button(px, py, this.imgs.buttonPlay , setState.bind(this, STATE_PLAYING));
 	this.buttonPause = new Button(px, py, this.imgs.buttonPause, setState.bind(this, STATE_PAUSED));
 	var dy = 350;
-	this.buttonRestart = new Button(this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2, dy, this.imgs.buttonRestart,
+	this.buttonRestart1 = new Button(0, dy, this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
 	this.buttonLeaderboard = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonLeaderboard,
 		setState.bind(this, STATE_LEADERBOARD));
-	
+	dy = 680;
+	this.buttonRestart2 = new Button(0, dy, this.imgs.buttonRestart,
+		setState.bind(this, STATE_START));
+	this.buttonSubmit = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonSubmit,
+		function() { console.log("submit score"); });
+
 	// init pipes
 	this.pipes = [];
 	for (var i = 0; i < 10; i++) {
 		this.pipes[i] = new Pipe(-200);
 	}
 	
-
 	// setup handling focus events
 	window.onblur = function(e) {
 		if (that.state === STATE_PLAYING)
@@ -119,13 +129,13 @@ function Game() {
 	
 	// init stats
 	this.stats = document.getElementById("stats");
-
+	
 	// init vars
 	this.debugAllowed = false; // is debugging allowed?
 	this.debugView = false;
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.flappyDt = 0.08; // seconds per flappy frame
-
+	
 	// init state
 	this.state = STATE_START;
 }
@@ -142,8 +152,8 @@ Object.defineProperty(Game.prototype, 'flapButtonDown', {
 	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keys["Space"]; },
 });
 
-Object.defineProperty(Game.prototype, 'humanReadableState', {
-	get: function() { return stateToString(this.state); },
+Object.defineProperty(Game.prototype, 'stateChangeDt', {
+	get: function() { return (Date.now().valueOf() - this.stateChangeTime) / 1000.0; },
 });
 
 Object.defineProperty(Game.prototype, 'state', {
@@ -151,6 +161,7 @@ Object.defineProperty(Game.prototype, 'state', {
 	set: function(s) {
 		const GRAVITY = -800;
 		console.log("STATE CHANGE: " + stateToString(this.state_) + " => " + stateToString(s));
+		this.stateChangeTime = Date.now().valueOf();
 		this.state_ = s;
 		if (s === STATE_START) {
 			// vars
@@ -165,6 +176,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.bird = new Bird();
 			this.flappyi = 0; // current flappy frame
 			this.oscillate = true;
+			this.regenPipes = false;
 
 		} else if (s === STATE_PLAYING) {
 			// vars
@@ -172,10 +184,9 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.deadFlappyImage = false;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
-			
-			// action
-			this.prevTime = Date.now().valueOf();
+			this.regenPipes = true;
 			this.paused = false;
+			this.prevTime = NaN;
 			
 		} else if (s === STATE_PAUSED) {
 			// vars
@@ -183,32 +194,40 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.deadFlappyImage = false;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
-
-			// action
+			this.regenPipes = true;
 			this.paused = true;
 			
 		} else if (s === STATE_DEATH) {
 			// vars
-			this.buttons = [this.buttonRestart, this.buttonLeaderboard];
+			this.buttons = [this.buttonRestart1, this.buttonLeaderboard];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
+			this.regenPipes = true;
+			this.newBestScore = false;
 			if (this.score > this.bestScore) {
 				this.bestScore = this.score;
+				this.newBestScore = true;
 				setBestScore(this.bestScore);
 			}
-
-			// action
 			this.bird.velY = 300;
 			this.bird.velX = 0;
-
+			
 		} else if (s === STATE_LEADERBOARD) {
 			// vars
-			this.buttons = [];
+			this.buttons = [this.buttonRestart2, this.buttonSubmit];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
-
+			this.regenPipes = true;
+			this.leaderboard = [];
+			this.loading = true;
+			getLeaderboard((function(leaderboard) {
+				this.leaderboard = leaderboard;
+				this.loading = false;
+				console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
+			}).bind(this));
+			
 		} else {
 			console.log("Error: Invalid state: " + s);
 			this.state = STATE_START;
@@ -303,7 +322,7 @@ Game.prototype.update = function() {
 	this.updateFlappy(dt);
 	
 	// check pipes. regen if not valid. add to score if passed.
-	if (this.state !== STATE_START) {
+	if (this.regenPipes) {
 		for (var i = 0; i < this.pipes.length; i++) {
 			var pipe = this.pipes[i];
 			if (!pipe.passed && pipe.x + this.imgs.pipeHead.width / 2 < this.bird.posX) {
@@ -467,7 +486,7 @@ Game.prototype.drawPlayingUI = function(c) {
 
 Game.prototype.drawStartUI = function(c) {
 	c.textAlign = "center";
-	c.textBaseline = "middle";
+	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var x = Math.floor(c.canvas.width / 2);
 	var col = "gold";//"#30e830";
@@ -481,15 +500,15 @@ Game.prototype.drawStartUI = function(c) {
 
 Game.prototype.drawDeathUI = function(c) {
 	c.textAlign = "center";
-	c.textBaseline = "middle";
+	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var titleCol = "gold";
 	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 150, titleCol);
 	
 	c.font = "30px FlappyFont";
 	var diff = 70;
-	var l = c.canvas.width/2 - diff;
-	var r = c.canvas.width/2 + diff;
+	var l = Math.floor(c.canvas.width/2 - diff);
+	var r = Math.floor(c.canvas.width/2 + diff);
 	var t = 240;
 	var b = 290;
 	var outline = 3;
@@ -497,14 +516,72 @@ Game.prototype.drawDeathUI = function(c) {
 	drawFlappyText(c, "Best" , r, t, "white", outline);
 	drawFlappyText(c, this.score    , l, b, "white", outline);
 	drawFlappyText(c, this.bestScore, r, b, "white", outline);
+
+	if (this.newBestScore)
+		drawImage(c, this.imgs.new, r + 27, t - 10);
 }
 
 Game.prototype.drawLeaderboardUI = function(c) {
 	c.textAlign = "center";
-	c.textBaseline = "middle";
+	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var titleCol = "gold";
-	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 150, titleCol);
+	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 100, titleCol);
+	if (this.loading) {
+		var x = c.canvas.width/2;
+		var y = 380;
+		this.drawLoading(c, this.stateChangeDt, x, y);
+	} else if (this.leaderboardError) {
+		// TODO: display error
+	} else {
+		this.drawLeaderboard(c);
+	}
+}
+
+Game.prototype.drawLeaderboard = function(c) {
+	c.textBaseline = "top";
+	c.font = "30px FlappyFont";
+	
+	for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
+		var e = this.leaderboard[i];
+		if (typeof e === "undefined")
+			break;
+		
+		var x = c.canvas.width - 160;
+		var spacing = 20;
+		var y = 220 + 40 * i;
+		c.textAlign = "right";
+		drawFlappyText(c, e.name, x - spacing, y, "white", 3);
+		drawFlappyText(c, (i + 1) + ".", 60, y, "white", 3);
+		c.textAlign = "left";
+		drawFlappyText(c, e.score, x + spacing, y, "white", 3);
+	}
+}
+
+Game.prototype.drawLoading = function(c, dt, x, y) {
+	var ang = (5 * dt) % (2 * Math.PI);
+	var i = (15 * dt) % this.imgs.flappy.length;
+	var dots = Math.floor(((2 * dt) % 3) + 1);
+	var img = this.imgs.flappy[Math.floor(i)];
+
+	var text = ".".repeat(dots);
+	
+	var radius = -35;
+	var offsetX = -img.width/2;
+	var offsetY = -img.height/2;
+	
+	c.textAlign = "middle";
+	c.textBaseline = "bottom";
+	c.font = "30px FlappyFont";
+	drawFlappyText(c, text, x, y + 8, "white", 2);
+	
+	c.translate(x, y);
+	c.rotate(ang);
+	c.translate(0, radius);
+	drawImage(c, img, offsetX, offsetY);
+	c.translate(0, -radius);
+	c.rotate(-ang);
+	c.translate(-x, -y);
 }
 
 Game.prototype.drawStats = function() {
@@ -513,7 +590,7 @@ Game.prototype.drawStats = function() {
 	var html = "";
 	html += "Score: " + this.score + "<br>";
 	html += "Paused: " + this.paused + "<br>";
-	html += "State: " + this.humanReadableState + "<br>";
+	html += "State: " + stateToString(this.state) + "<br>";
 	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
 	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
 	html += "VelX: " + this.bird.velX.toFixed(2) + "<br>";

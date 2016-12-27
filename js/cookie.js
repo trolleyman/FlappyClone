@@ -22,17 +22,3 @@ function getCookie(cname) {
 	}
 	return "";
 }
-
-function setBestScore(score) {
-	setCookie(BEST_SCORE_COOKIE_NAME, score, 365);
-	console.log("Best score set: " + score);
-}
-
-function getBestScore() {
-	var bestScore = parseInt(getCookie(BEST_SCORE_COOKIE_NAME));
-	if (isNaN(bestScore)) {
-		bestScore = 0;
-		setBestScore(0);
-	}
-	return bestScore;
-}
