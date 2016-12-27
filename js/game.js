@@ -49,16 +49,16 @@ function Game() {
 	this.mouseY = 0;
 	
 	// setup keys
-	this.keys = [];
+	this.keyCodes = [];
 	this.keyUps = [];
 	this.keyDowns = [];
 	window.onkeyup = function(e) {
-		that.keys[e.code] = false;
-		that.keyUps[that.keyUps.length] = e.code;
+		that.keyCodes[e.code] = false;
+		that.keyUps[that.keyUps.length] = e;
 	}
 	window.onkeydown = function(e) {
-		that.keys[e.code] = true;
-		that.keyDowns[that.keyDowns.length] = e.code;
+		that.keyCodes[e.code] = true;
+		that.keyDowns[that.keyDowns.length] = e;
 	}
 	
 	// setup font loading
@@ -96,7 +96,8 @@ function Game() {
 	this.imgs.buttonRestart = this.loadImage("img/buttonRestart.png");
 	this.imgs.buttonLeaderboard = this.loadImage("img/buttonLeaderboard.png");
 	this.imgs.buttonSubmit = this.loadImage("img/buttonSubmit.png");
-
+	this.imgs.buttonSubmitDisabled = this.loadImage("img/buttonSubmitDisabled.png");
+	
 	// setup buttons
 	var px = 50, py = 50;
 	var setState = Object.getOwnPropertyDescriptor(Game.prototype, 'state').set;
@@ -111,9 +112,40 @@ function Game() {
 	var spacing = 20;
 	this.buttonRestart2 = new Button(0, dy, this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
-	this.buttonSubmit = new Button(this.canvas.width/2 + spacing/2, dy, this.imgs.buttonSubmit,
-		function() { console.log("submit score"); });
-
+	
+	var submitFunction = (function() {
+		var name = this.text;
+		if (!isValidName(name)) {
+			console.log("'" + name + "' is not a valid name.");
+			return;
+		}
+		console.log("Submitting best score for '" + name + "': " + this.bestScore);
+		this.submitting = true;
+		this.submitted = false;
+		submitBestScore(name, this.bestScore, (function() {
+			console.log("Submitted score.");
+			this.submitting = false;
+			this.submitted = true;
+			this.leaderboard[this.leaderboardPos].user = false;
+			this.leaderboard[this.leaderboardPos].name = name;
+			this.endTextEntryMode();
+		}).bind(this), (function(error) {
+			console.log("error submitting score: " + error); // TODO
+		}).bind(this));
+	}).bind(this);
+	
+	var disableFunction = (function() {
+		if (!this.newBestScore
+			|| this.leaderboardLoading
+			|| !isValidName(this.text)
+			|| this.submitting || this.submitted)
+			return true;
+		return false;
+	}).bind(this);
+	
+	this.buttonSubmit = new DisableButton(this.canvas.width/2 + spacing/2, dy,
+		this.imgs.buttonSubmit, this.imgs.buttonSubmitDisabled, submitFunction, disableFunction);
+	
 	// init pipes
 	this.pipes = [];
 	for (var i = 0; i < 10; i++) {
@@ -141,6 +173,9 @@ function Game() {
 	this.flappyDt = 0.08; // seconds per flappy frame
 	this.paused = false;
 	this.cameraX = 0;
+
+	this.beginTextEntryMode();
+	this.endTextEntryMode();
 	
 	// init state
 	this.state = STATE_LOADING;
@@ -201,7 +236,7 @@ Object.defineProperty(Game.prototype, 'flappyCurrent', {
 });
 
 Object.defineProperty(Game.prototype, 'flapButtonDown', {
-	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keys["Space"]; },
+	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keyCodes["Space"]; },
 });
 
 Object.defineProperty(Game.prototype, 'stateChangeDt', {
@@ -292,14 +327,44 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.oscillate = false;
 			this.regenPipes = true;
 			this.leaderboard = [];
-			this.loading = true;
+			this.leaderboardLoading = true;
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
 			getLeaderboard((function(leaderboard) {
 				this.leaderboard = leaderboard;
-				this.loading = false;
+				this.leaderboardLoading = false;
 				console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
+				if (this.newBestScore) {
+					// find if the user fits on the leaderboard
+					var pos = -1;
+					for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
+						var e = leaderboard[i];
+						if (typeof e === "undefined" || this.bestScore > e.score) {
+							pos = i;
+							break;
+						}
+					}
+					
+					if (pos !== -1) {
+						this.leaderboardPos = pos;
+						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
+						var legalChar = function(c) {
+							if (c.charCodeAt(0) >= 'a'.charCodeAt(0) && c.charCodeAt(0) <= 'z'.charCodeAt(0)) {
+								// lowercase chars
+								return true;
+							} else if (c.charCodeAt(0) >= 'A'.charCodeAt(0) && c.charCodeAt(0) <= 'Z'.charCodeAt(0)) {
+								// uppercase chars
+								return true;
+							} else if (c.charCodeAt(0) >= '1'.charCodeAt(0) && c.charCodeAt(0) <= '9'.charCodeAt(0)) {
+								// digits
+								return true;
+							}
+							return false;
+						};
+						this.beginTextEntryMode(MAX_NAME_LENGTH, legalChar);
+					}
+				}
 			}).bind(this));
 			
 		} else {
@@ -325,21 +390,112 @@ Game.prototype.mainLoop = function() {
 	this.keyDowns = [];
 };
 
+Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
+	this.text = "";
+	this.textEntry = true;
+	this.textPos = 0;
+	if (typeof maxLength === "undefined")
+		maxLength = 32;
+	this.textMaxLength = maxLength;
+	if (typeof isLegalChar === "undefined")
+		isLegalChar = function(c) { return true; };
+	this.textIsLegalChar = isLegalChar;
+}
+
+Game.prototype.backspaceText = function() {
+	if (this.text.length > 0 && this.textPos > 0) {
+		var begin = this.text.substring(0, this.textPos - 1);
+		var end = this.text.substring(this.textPos, this.text.length);
+		this.text = begin + end;
+		this.moveCursorText(-1);
+	}
+}
+
+Game.prototype.deleteText = function() {
+	if (this.text.length > 0 && this.textPos < this.text.length) {
+		this.textPos += 1;
+		this.backspaceText();
+	}
+}
+
+Game.prototype.moveCursorText = function(n) {
+	this.textPos += n;
+	if (this.textPos < 0)
+		this.textPos = 0;
+	else if (this.textPos >= this.text.length)
+		this.textPos = this.text.length;
+	this.printText();
+}
+
+Game.prototype.printText = function() {
+	var begin = this.text.substring(0, this.textPos);
+	var end = this.text.substring(this.textPos, this.text.length);
+	console.log("Text: " + begin + "|" + end);
+}
+
+Game.prototype.enterText = function(enteredText) {
+	var validText = '';
+	for (var i = 0; i < enteredText.length; i++) {
+		var c = enteredText[i];
+		if (this.textIsLegalChar(c))
+			validText += c;
+	}
+
+	var lengthAllowed = this.textMaxLength - this.text.length;
+	if (lengthAllowed <= 0) {
+		// no extra text allowed!
+		console.log("Prevented from entering text (" + validText + "): max length (" + this.textMaxLength + ") reached.");
+		return;
+	} else if (validText.length > lengthAllowed) {
+		// cut extra text down to size
+		validText = validText.substring(0, lengthAllowed);
+	}
+	var begin = this.text.substring(0, this.textPos);
+	var end = this.text.substring(this.textPos, this.text.length);
+	this.text = begin + validText + end;
+	this.moveCursorText(validText.length);
+}
+
+Game.prototype.getTextEntered = function() {
+	return this.text;
+}
+
+Game.prototype.endTextEntryMode = function() {
+	this.textEntry = false;
+	return this.text;
+}
+
 Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
-		var key = this.keyDowns[i];
-		// if escape has been pressed, toggle pause setting
-		if (key === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING || this.state === STATE_PAUSED)) {
+		var e = this.keyDowns[i];
+		var key = this.keyDowns[i].key; // key is 'w', 'W', '!', etc.
+		var code = this.keyDowns[i].code; // code is 'Escape', 'KeyW', 'Digit1', etc.
+		
+		if (code === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING || this.state === STATE_PAUSED)) {
 			this.togglePause();
 		}
-		if (key === "Digit1" && this.debugAllowed) {
+		if (code === "Digit1" && this.debugAllowed) {
 			this.debugView = !this.debugView;
 		}
-		if (key === "Digit2" && this.debugAllowed) {
+		if (code === "Digit2" && this.debugAllowed) {
 			this.cameraUpdate = !this.cameraUpdate;
 		}
 		
-		console.log("Key pressed:", key);
+		console.log("Key pressed: " + key + " (" + code + ")");
+		
+		if (this.textEntry) {
+			if (key.length === 1) {
+				this.enterText(key);
+			} else if (key === "Backspace") {
+				this.backspaceText();
+			} else if (key === "Delete") {
+				this.deleteText();
+			} else if (key === "ArrowLeft") {
+				this.moveCursorText(-1);
+			} else if (key === "ArrowRight") {
+				this.moveCursorText(1);
+			}
+		}
 	}
 }
 
@@ -641,7 +797,7 @@ Game.prototype.drawLeaderboardUI = function(c) {
 	c.font = "60px FlappyFont";
 	var titleCol = "gold";
 	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 110, titleCol);
-	if (this.loading) {
+	if (this.leaderboardLoading) {
 		var x = c.canvas.width/2;
 		var y = 380;
 		this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
@@ -661,14 +817,35 @@ Game.prototype.drawLeaderboard = function(c) {
 		if (typeof e === "undefined")
 			break;
 		
-		var x = c.canvas.width - 160;
+		var col = "white";
+		var hide = false;
+		if (e.user) {
+			col = "gold";
+			if (Math.floor((5 * this.stateChangeDt) % 3) === 0)
+				hide = true;
+		}
+		
+		var x = c.canvas.width - 140;
 		var spacing = 20;
 		var y = 220 + 40 * i;
 		c.textAlign = "right";
-		drawFlappyText(c, e.name, x - spacing, y, "white", 3);
-		drawFlappyText(c, (i + 1) + ".", 60, y, "white", 3);
+		if (e.user) {
+			var start = this.text.substring(0, this.textPos);
+			var end = this.text.substring(this.textPos, this.text.length);
+			var chr = "|";
+			if (hide)
+				chr = "\u2008";
+			var txt = start + chr + end;
+
+			drawFlappyText(c, txt, x - spacing, y, col, 3);
+			if (!hide)
+				drawFlappyText(c, "", x - spacing, y, col, 3);
+		} else {
+			drawFlappyText(c, e.name, x - spacing, y, col, 3);
+		}
+		drawFlappyText(c, (i + 1) + ".", 60, y, col, 3);
 		c.textAlign = "left";
-		drawFlappyText(c, e.score, x + spacing, y, "white", 3);
+		drawFlappyText(c, e.score, x + spacing, y, col, 3);
 	}
 }
 
