@@ -34,8 +34,8 @@ function Game() {
 	this.canvas.onmousedown = function(e) {
 		if (e.button === 0) {
 			that.lmbDown = true;
-			that.mouseX = e.clientX;
-			that.mouseY = e.clientY;
+			that.mouseX = e.offsetX;
+			that.mouseY = e.offsetY;
 			console.log("lmb pressed (" + that.mouseX + ", " + that.mouseY + ")");
 		}
 	};
