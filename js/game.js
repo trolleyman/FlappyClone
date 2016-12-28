@@ -14,6 +14,8 @@ const STATE_DEATH = 4;
 const STATE_LEADERBOARD = 5;
 const STATE_LEADERBOARD_ERROR = 6;
 
+const WHICH_CODE_SPACE = 32;
+
 function stateToString(state) {
 	     if (state === STATE_LOADING)     return "STATE_LOADING";
 	else if (state === STATE_START)       return "STATE_START";
@@ -50,14 +52,17 @@ function Game() {
 	
 	// setup keys
 	this.keyCodes = [];
+	this.keyWhichs = [];
 	this.keyUps = [];
 	this.keyDowns = [];
 	window.onkeyup = function(e) {
 		that.keyCodes[e.code] = false;
+		that.keyWhichs[e.which] = false;
 		that.keyUps[that.keyUps.length] = e;
 	}
 	window.onkeydown = function(e) {
 		that.keyCodes[e.code] = true;
+		that.keyWhichs[e.which] = true;
 		that.keyDowns[that.keyDowns.length] = e;
 	}
 	
@@ -290,7 +295,7 @@ Object.defineProperty(Game.prototype, 'flappyCurrent', {
 });
 
 Object.defineProperty(Game.prototype, 'flapButtonDown', {
-	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keyCodes["Space"]; },
+	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keyWhichs[WHICH_CODE_SPACE]; },
 });
 
 Object.defineProperty(Game.prototype, 'stateChangeDt', {
@@ -527,8 +532,8 @@ Game.prototype.endTextEntryMode = function() {
 Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
 		var e = this.keyDowns[i];
-		var key = this.keyDowns[i].key; // key is 'w', 'W', '!', etc.
-		var code = this.keyDowns[i].code; // code is 'Escape', 'KeyW', 'Digit1', etc.
+		var key = e.key; // key is 'w', 'W', '!', etc.
+		var code = e.code; // code is 'Escape', 'KeyW', 'Digit1', etc.
 		
 		if (code === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING || this.state === STATE_PAUSED)) {
 			this.togglePause();
@@ -540,7 +545,7 @@ Game.prototype.processKeys = function() {
 			this.cameraUpdate = !this.cameraUpdate;
 		}
 		
-		console.log("Key pressed: '" + key + "' (" + code + ")");
+		console.log("Key pressed: " + e.which + " '" + key + "' (" + code + ")");
 		
 		if (this.textEntry) {
 			if (key.length === 1) {
