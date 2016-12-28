@@ -1,11 +1,12 @@
 
 const BEST_SCORE_COOKIE_NAME = "bestScore";
 
+const LEADERBOARD_URL = "http://ec2-35-164-204-198.us-west-2.compute.amazonaws.com/leaderboard.json";
+//const LEADERBOARD_URL = "http://localhost:80/leaderboard.json";
+
 // NB: If these constants are updated, remember to update the PHP AWS versions (in priv/name.php)!!
 const MAX_NAME_LENGTH = 10;
 const NUM_LEADERBOARD_ENTRIES = 10;
-
-const LEADERBOARD_COOKIE_NAME = "leaderboard";
 
 function setBestScore(score) {
 	setCookie(BEST_SCORE_COOKIE_NAME, score, 365);
@@ -19,39 +20,6 @@ function getBestScore() {
 		setBestScore(0);
 	}
 	return bestScore;
-}
-
-function setLeaderboard(leaderboard) {
-	setCookie(LEADERBOARD_COOKIE_NAME, JSON.stringify(leaderboard), 365);
-}
-
-// TODO: Error callback
-// Takes a callback that is triggered when the leaderboard has been loaded.
-function getLeaderboard(callback) {
-	// for now, fake it.
-	const DEFAULT_LEADERBOARD = [
-// 		{name:"hello", score:31},
-// 		{name:"my", score:20},
-// 		{name:"baby", score:12},
-// 		{name:"hello", score:9},
-// 		{name:"my", score:8},
-// 		{name:"darlin", score:5},
-// 		{name:"hello", score:4},
-// 		{name:"my", score:3},
-// 		{name:"ragtime", score:2},
-// 		{name:"gal", score:1},
-	];
-	
-	var leaderboardStr = getCookie(LEADERBOARD_COOKIE_NAME);
-	var leaderboard = null;
-	if (leaderboardStr === "") {
-		leaderboard = DEFAULT_LEADERBOARD;
-		setLeaderboard(leaderboard);
-	} else {
-		leaderboard = JSON.parse(leaderboardStr);
-	}
-	
-	setTimeout(callback, 2000, leaderboard);
 }
 
 // NB: If updating these functions, ensure that the PHP AWS functions are also updated (in priv/name.php)!
@@ -85,28 +53,47 @@ function isLegalNameChar(c) {
 	return false;
 }
 
+// Takes a callback that is triggered when the leaderboard has been loaded.
+function getLeaderboard(successCallback, errorCallback) {
+	var req = new XMLHttpRequest();
+	req.onreadystatechange = function() {
+		if (this.readyState == 4) {
+			if (this.status === 200) {
+				var text = this.responseText;
+				var leaderboard = null;
+				try {
+					leaderboard = JSON.parse(text);
+				} catch (e) {
+					errorCallback("Invalid JSON response: " + text);
+				}
+				successCallback(leaderboard);
+			} else {
+				errorCallback(this.statusText + ": " + this.responseText);
+			}
+		}
+	};
+	req.open("GET", LEADERBOARD_URL, true);
+	req.send();
+}
+
 // Takes a callback that is triggered when the score has been submitted.
 function submitBestScore(name, score, successCallback, errorCallback) {
-	getLeaderboard(function(leaderboard) {
-		var pos = -1;
-		for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
-			var e = leaderboard[i];
-			if (typeof e === "undefined" || score > e.score) {
-				pos = i;
-				break;
+	var req = new XMLHttpRequest();
+	req.onreadystatechange = function() {
+		if (this.readyState == 4) {
+			if (this.status === 200) {
+				successCallback();
+			} else {
+				var e = "" + this.status;
+				if (this.statusText)
+					e += " " + this.statusText;
+				e += ": ";
+				errorCallback(e + this.responseText);
 			}
 		}
-		if (pos === -1) {
-			setTimeout(errorCallback, 3000, "not good enough");
-		} else {
-			leaderboard.splice(pos, 0, {name:name, score:score});
-			if (leaderboard.length > NUM_LEADERBOARD_ENTRIES) {
-				leaderboard = leaderboard.slice(0, NUM_LEADERBOARD_ENTRIES);
-			}
-
-			setLeaderboard(leaderboard);
-			setTimeout(successCallback, 2000);
-			console.log("Submitted best score: " + name + ": " + score);
-		}
-	});
+	};
+	var params = "name=" + encodeURIComponent(name) + "&score=" + encodeURIComponent(score);
+	req.open("POST", LEADERBOARD_URL, true);
+	req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	req.send(params);
 }

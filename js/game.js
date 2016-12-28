@@ -12,6 +12,7 @@ const STATE_PLAYING = 2;
 const STATE_PAUSED = 3;
 const STATE_DEATH = 4;
 const STATE_LEADERBOARD = 5;
+const STATE_LEADERBOARD_ERROR = 6;
 
 function stateToString(state) {
 	     if (state === STATE_LOADING)     return "STATE_LOADING";
@@ -20,6 +21,7 @@ function stateToString(state) {
 	else if (state === STATE_PAUSED)      return "STATE_PAUSED";
 	else if (state === STATE_DEATH)       return "STATE_DEATH";
 	else if (state === STATE_LEADERBOARD) return "STATE_LEADERBOARD";
+	else if (state === STATE_LEADERBOARD_ERROR) return "STATE_LEADERBOARD_ERROR";
 	else return "Invalid state: " + state;
 }
 
@@ -95,6 +97,7 @@ function Game() {
 	this.imgs.buttonLeaderboard = this.loadImage("img/buttonLeaderboard.png");
 	this.imgs.buttonSubmit = this.loadImage("img/buttonSubmit.png");
 	this.imgs.buttonSubmitDisabled = this.loadImage("img/buttonSubmitDisabled.png");
+	this.imgs.buttonRetry = this.loadImage("img/buttonRetry.png");
 	
 	// setup buttons
 	var px = 50, py = 50;
@@ -127,7 +130,10 @@ function Game() {
 			this.submitting = false;
 			this.submitted = true;
 		}).bind(this), (function(error) {
-			console.log("error submitting score: " + error); // TODO
+			this.submitting = false;
+			this.submitted = true;
+			console.log("error submitting score: " + error);
+			this.errorSubmitting = true;
 		}).bind(this));
 	}).bind(this);
 	
@@ -142,6 +148,12 @@ function Game() {
 	
 	this.buttonSubmit = new DisableButton(this.canvas.width/2 + spacing/2, dy,
 		this.imgs.buttonSubmit, this.imgs.buttonSubmitDisabled, submitFunction, disableFunction);
+	
+	dy = 400;
+	this.buttonRestartLeaderboardError = new Button(0, dy, this.imgs.buttonRestart,
+		setState.bind(this, STATE_START));
+	this.buttonRetry = new Button(this.canvas.width/2 + spacing/2, dy,
+		this.imgs.buttonRetry, setState.bind(this, STATE_LEADERBOARD));
 	
 	// init pipes
 	this.pipes = [];
@@ -217,6 +229,7 @@ Game.prototype.finishImageLoading = function() {
 	this.buttonRestart1.x = x;
 	this.buttonLeaderboard.x = x + this.imgs.buttonRestart.width + spacing;
 	this.buttonRestart2.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
+	this.buttonRestartLeaderboardError.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
 }
 
 Object.defineProperty(Game.prototype, 'imagesLoaded', {
@@ -313,6 +326,7 @@ Object.defineProperty(Game.prototype, 'state', {
 				this.bestScore = this.score;
 				this.newBestScore = true;
 				this.submitted = false;
+				this.errorSubmitting = false;
 				setBestScore(this.bestScore);
 			}
 			this.bird.velY = 300;
@@ -329,7 +343,8 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
-			getLeaderboard((function(leaderboard) {
+			
+			var successFunction = (function(leaderboard) {
 				this.leaderboard = leaderboard;
 				this.leaderboardLoading = false;
 				console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
@@ -350,7 +365,22 @@ Object.defineProperty(Game.prototype, 'state', {
 						this.beginTextEntryMode(MAX_NAME_LENGTH, isLegalNameChar);
 					}
 				}
-			}).bind(this));
+			}).bind(this);
+			var errorFunction = (function(err) {
+				console.log("Error loading leaderboard: " + err);
+				this.state = STATE_LEADERBOARD_ERROR;
+			}).bind(this);
+			
+			getLeaderboard(successFunction, errorFunction);
+		} else if (this.state === STATE_LEADERBOARD_ERROR) {
+			this.buttons = [this.buttonRestartLeaderboardError, this.buttonRetry];
+			this.deadFlappyImage = true;
+			this.gravity = GRAVITY;
+			this.oscillate = false;
+			this.regenPipes = true;
+			this.cameraUpdate = true;
+			this.flappyVisible = true;
+			this.groundVisible = true;
 			
 		} else {
 			console.log("Error: Invalid state: " + s);
@@ -718,6 +748,9 @@ Game.prototype.drawUI = function(c) {
 	if (this.state === STATE_LEADERBOARD)
 		this.drawLeaderboardUI(c);
 	
+	if (this.state === STATE_LEADERBOARD_ERROR)
+		this.drawLeaderboardErrorUI(c);
+	
 	// draw buttons
 	var bs = this.buttons;
 	for (var i = 0; i < bs.length; i++) {
@@ -777,27 +810,52 @@ Game.prototype.drawDeathUI = function(c) {
 }
 
 Game.prototype.drawLeaderboardUI = function(c) {
+	this.drawLeaderboardHeader(c);
+	if (this.leaderboardLoading) {
+		var x = c.canvas.width/2;
+		var y = 380;
+		this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
+	} else {
+		this.drawLeaderboard(c);
+	}
+}
+
+Game.prototype.drawLeaderboardErrorUI = function(c) {	
+	var img = this.imgs.deadFlappy[2];
+	var offsetX = -img.width/2;
+	var offsetY = -img.height/2;
+	var x = c.canvas.width/2;
+	var y = 345;
+	
+	c.translate(x, y);
+	c.rotate(Math.PI);
+	drawImage(c, img, offsetX, offsetY);
+	c.rotate(-Math.PI);
+	c.translate(-x, -y);
+	
+	c.textAlign = "center";
+	c.textBaseline = "top";
+	c.font = "60px FlappyFont";
+	drawFlappyText(c, "Error", x, 110, "red");
+	var spacing = 50, startY = 210;
+	c.font = "30px FlappyFont";
+	drawFlappyText(c, "The leaderboard could", x, startY, "white", 3)
+	drawFlappyText(c, "not be loaded.", x, startY + spacing, "white", 3)
+}
+
+Game.prototype.drawLeaderboardHeader = function(c) {
 	c.textAlign = "center";
 	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var titleCol = "gold";
 	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 110, titleCol);
-	if (this.leaderboardLoading) {
-		var x = c.canvas.width/2;
-		var y = 380;
-		this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
-	} else if (this.leaderboardError) {
-		// TODO: display error
-	} else {
-		this.drawLeaderboard(c);
-	}
 }
 
 Game.prototype.drawLeaderboard = function(c) {
 	c.textBaseline = "top";
 	c.font = "30px FlappyFont";
 	
-	var spacing = 13;
+	var spacing = 8;
 	var x = c.canvas.width - 140;
 	var y = 200;
 	var titleCol = "gold";
@@ -814,7 +872,9 @@ Game.prototype.drawLeaderboard = function(c) {
 		
 		var col = "white";
 		var hide = hide = Math.floor((5 * this.stateChangeDt) % 3) === 0;
-		if (e.user) {
+		if (e.user && this.errorSubmitting) {
+			col = "red";
+		} else if (e.user) {
 			col = "gold";
 		}
 		
@@ -834,6 +894,8 @@ Game.prototype.drawLeaderboard = function(c) {
 			var text = ".".repeat(dots);
 			
 			drawFlappyText(c, text, x - spacing, y, col, 3);
+		} else if (this.errorSubmitting && e.user) {
+			drawFlappyText(c, "ERROR", x - spacing, y, col, 3);
 		} else {
 			drawFlappyText(c, e.name, x - spacing, y, col, 3);
 		}
