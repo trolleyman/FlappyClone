@@ -173,15 +173,41 @@ function Game() {
 		this.pipes[i] = new Pipe(-200);
 	}
 	
-	// setup handling focus events
-	window.onblur = function(e) {
-		that.pause();
-		if (that.state === STATE_PLAYING)
-			that.state = STATE_PAUSED;
+	// setup handling focus events. see https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
+	var hidden, visibilityChange; 
+	if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
+		hidden = "hidden";
+		visibilityChange = "visibilitychange";
+	} else if (typeof document.msHidden !== "undefined") {
+		hidden = "msHidden";
+		visibilityChange = "msvisibilitychange";
+	} else if (typeof document.webkitHidden !== "undefined") {
+		hidden = "webkitHidden";
+		visibilityChange = "webkitvisibilitychange";
 	}
-	window.onfocus = function(e) {
-		if (that.state !== STATE_PAUSED)
-			that.unpause();
+	
+	// if the page is hidden, pause the game
+	// if the page is hidden, unpause the game, unless it is in the STATE_PAUSED state
+	function handleVisibilityChange() {
+		if (document[hidden]) {
+			console.log("Page hidden: paused.");
+			that.pause();
+			if (that.state === STATE_PLAYING)
+				that.state = STATE_PAUSED;
+		} else {
+			if (that.state !== STATE_PAUSED) {
+				console.log("Page unhidden: resumed.");
+				that.unpause();
+			}
+		}
+	}
+
+	// Warn if the browser doesn't support addEventListener or the Page Visibility API
+	if (typeof document.addEventListener === "undefined" || typeof document[hidden] === "undefined") {
+		console.log("Error: Page Visibility API not supported.");
+	} else {
+		// Handle page visibility change   
+		document.addEventListener(visibilityChange, handleVisibilityChange, false);
 	}
 	
 	// init stats
