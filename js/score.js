@@ -1,9 +1,11 @@
 
 const BEST_SCORE_COOKIE_NAME = "bestScore";
+
+// NB: If these constants are updated, remember to update the PHP AWS versions (in priv/name.php)!!
 const MAX_NAME_LENGTH = 10;
+const NUM_LEADERBOARD_ENTRIES = 10;
 
 const LEADERBOARD_COOKIE_NAME = "leaderboard";
-const NUM_LEADERBOARD_ENTRIES = 10;
 
 function setBestScore(score) {
 	setCookie(BEST_SCORE_COOKIE_NAME, score, 365);
@@ -52,6 +54,7 @@ function getLeaderboard(callback) {
 	setTimeout(callback, 2000, leaderboard);
 }
 
+// NB: If updating these functions, ensure that the PHP AWS functions are also updated (in priv/name.php)!
 function isLegalName(name) {
 	if (typeof name !== "string") {
 		return false;
@@ -67,6 +70,7 @@ function isLegalName(name) {
 	return true;
 }
 
+// NB: If updating these functions, ensure that the PHP AWS functions are also updated (in priv/name.php)!
 function isLegalNameChar(c) {
 	if (c.charCodeAt(0) >= 'a'.charCodeAt(0) && c.charCodeAt(0) <= 'z'.charCodeAt(0)) {
 		// lowercase chars
