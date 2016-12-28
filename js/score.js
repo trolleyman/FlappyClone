@@ -1,5 +1,5 @@
 
-const BEST_SCORE_COOKIE_NAME = "bestScore";
+const BEST_SCORE_COOKIE_NAME = "BEST_SCORE";
 
 const LEADERBOARD_URL = "http://ec2-35-164-204-198.us-west-2.compute.amazonaws.com/leaderboard.json";
 //const LEADERBOARD_URL = "http://localhost:80/leaderboard.json";
