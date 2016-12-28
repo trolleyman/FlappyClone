@@ -1,8 +1,8 @@
 
 const BEST_SCORE_COOKIE_NAME = "BEST_SCORE";
 
-const LEADERBOARD_URL = "http://ec2-35-164-204-198.us-west-2.compute.amazonaws.com/leaderboard.json";
-//const LEADERBOARD_URL = "http://localhost:80/leaderboard.json";
+const LEADERBOARD_URL = "https://ec2-35-164-204-198.us-west-2.compute.amazonaws.com/leaderboard.json";
+//const LEADERBOARD_URL = "https://localhost:80/leaderboard.json";
 
 // NB: If these constants are updated, remember to update the PHP AWS versions (in priv/name.php)!!
 const MAX_NAME_LENGTH = 10;

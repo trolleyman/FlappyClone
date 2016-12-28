@@ -122,6 +122,8 @@ function Game() {
 		}
 		console.log("Submitting best score for '" + name + "': " + this.bestScore);
 		this.submitting = true;
+		this.submittingStartTime = Date.now().valueOf() / 1000.0;
+		this.errorSubmitting = false;
 		this.submitted = false;
 		this.endTextEntryMode();
 		this.leaderboard[this.leaderboardPos].name = name;
@@ -131,7 +133,7 @@ function Game() {
 			this.submitted = true;
 		}).bind(this), (function(error) {
 			this.submitting = false;
-			this.submitted = true;
+			this.submitted = false;
 			console.log("error submitting score: " + error);
 			this.errorSubmitting = true;
 		}).bind(this));
@@ -890,7 +892,9 @@ Game.prototype.drawLeaderboard = function(c) {
 			var txt = start + chr + end;
 			drawFlappyText(c, txt, x - spacing, y, col, 3);
 		} else if (this.submitting && e.user) {
-			var dots = Math.floor(((2 * this.stateChangeDt) % 3) + 1);
+			var now = Date.now().valueOf() / 1000.0;
+			var dt = now - this.submittingStartTime;
+			var dots = Math.floor(((2 * dt) % 3) + 1);
 			var text = ".".repeat(dots);
 			
 			drawFlappyText(c, text, x - spacing, y, col, 3);
