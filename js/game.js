@@ -78,14 +78,24 @@ function Game() {
 	
 	// load images
 	this.imgs = {};
-	this.imgs.bg = this.loadImage("img/background.png");
-	this.imgs.bgBlank = this.loadImage("img/backgroundBlank.png");
 	this.imgs.flappy = [];
 	this.imgs.deadFlappy = [];
+	this.flappysLoaded = false;
+	var loadFlappyFunc = (function() {
+		if (typeof this.flappysLoadedNum === "undefined")
+			this.flappysLoadedNum = 0;
+		this.flappysLoadedNum += 1;
+		if (this.flappysLoadedNum === 4)
+			this.flappysLoaded = true;
+	}).bind(this);
 	for (var i = 0; i < 4; i++) {
-		this.imgs.flappy[i] = this.loadImage("img/flappy" + i + ".png");
+		this.imgs.flappy[i] = this.loadImage("img/flappy" + i + ".png", loadFlappyFunc);
+	}
+	for (var i = 0; i < 4; i++) {
 		this.imgs.deadFlappy[i] = this.loadImage("img/deadFlappy" + i + ".png");
 	}
+	this.imgs.bg = this.loadImage("img/background.png");
+	this.imgs.bgBlank = this.loadImage("img/backgroundBlank.png");
 	this.imgs.pipe = this.loadImage("img/pipe.png");
 	this.imgs.pipeHead = this.loadImage("img/pipeHead.png");
 	this.imgs.ground = this.loadImage("img/ground.png");
@@ -192,13 +202,16 @@ function Game() {
 	this.state = STATE_LOADING;
 }
 
-Game.prototype.loadImage = function(path) {
+Game.prototype.loadImage = function(path, f) {
+	if (typeof f === "undefined")
+		f = function() {};
 	if (typeof this.imagesLoadedMax === "undefined")
 		this.imagesLoadedMax = 0;
 	this.imagesLoadedMax += 1;
 	
 	var img = new Image();
 	img.onload = (function() {
+		f();
 		this.notfiyLoadedImage();
 	}).bind(this);
 	img.src = path;
@@ -213,13 +226,16 @@ Game.prototype.notfiyLoadedImage = function() {
 	if (this.imagesLoaded) {
 		this.finishImageLoading();
 		console.log(this.imagesLoadedNum + " images loaded.");
-		if (this.flappyFontLoaded)
-			this.state = STATE_START;
+		this.notifyLoadedResource();
 	}
 }
 
 Game.prototype.notifyLoadedFont = function() {
-	if (this.imagesLoaded) {
+	this.notifyLoadedResource();
+}
+
+Game.prototype.notifyLoadedResource = function() {
+	if (this.imagesLoaded && this.flappyFontLoaded) {
 		this.state = STATE_START;
 	}
 }
@@ -764,7 +780,8 @@ Game.prototype.drawUI = function(c) {
 Game.prototype.drawLoadingUI = function(c) {
 	var x = c.canvas.width/2;
 	var y = c.canvas.height/2;
-	//this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
+	if (this.flappysLoaded)
+		this.drawLoadingAnimation(c, this.stateChangeDt, x, y, false);
 }
 
 Game.prototype.drawPlayingUI = function(c) {
@@ -816,7 +833,7 @@ Game.prototype.drawLeaderboardUI = function(c) {
 	if (this.leaderboardLoading) {
 		var x = c.canvas.width/2;
 		var y = 380;
-		this.drawLoadingAnimation(c, this.stateChangeDt, x, y);
+		this.drawLoadingAnimation(c, this.stateChangeDt, x, y, true);
 	} else {
 		this.drawLeaderboard(c);
 	}
@@ -909,22 +926,24 @@ Game.prototype.drawLeaderboard = function(c) {
 	}
 }
 
-Game.prototype.drawLoadingAnimation = function(c, dt, x, y) {
+Game.prototype.drawLoadingAnimation = function(c, dt, x, y, drawText) {
 	var ang = (5 * dt) % (2 * Math.PI);
 	var i = (15 * dt) % this.imgs.flappy.length;
 	var dots = Math.floor(((2 * dt) % 3) + 1);
 	var img = this.imgs.flappy[Math.floor(i)];
-
-	var text = ".".repeat(dots);
 	
+	if (drawText) {
+		var text = ".".repeat(dots);
+
+		c.textAlign = "middle";
+		c.textBaseline = "bottom";
+		c.font = "30px FlappyFont";
+		drawFlappyText(c, text, x, y + 8, "white", 2);
+	}
+
 	var radius = -35;
 	var offsetX = -img.width/2;
 	var offsetY = -img.height/2;
-	
-	c.textAlign = "middle";
-	c.textBaseline = "bottom";
-	c.font = "30px FlappyFont";
-	drawFlappyText(c, text, x, y + 8, "white", 2);
 	
 	c.translate(x, y);
 	c.rotate(ang);
