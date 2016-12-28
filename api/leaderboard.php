@@ -8,13 +8,14 @@
 		die();
 	}
 	
+	if (!file_exists(LEADERBOARD_PATH)) {
+		mkdir(dirname(LEADERBOARD_PATH), 0755, TRUE);
+		file_put_contents(LEADERBOARD_PATH, "[]");
+	}
+	
 	lockFile(LEADERBOARD_PATH);
 	$leaderboardStr = '';
-	if (!file_exists(LEADERBOARD_PATH)) {
-		$leaderboardStr = '[]';
-	} else {
-		$leaderboardStr = file_get_contents(LEADERBOARD_PATH);
-	}
+	$leaderboardStr = file_get_contents(LEADERBOARD_PATH);
 	if ($leaderboardStr === FALSE)
 		error('Could not read leaderboard.json.', 500);
 	

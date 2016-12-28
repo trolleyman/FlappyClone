@@ -1,8 +1,9 @@
 <?php
-	error_reporting(0); // turn off error reporting
-	header("Access-Control-Allow-Origin: *");
+	//error_reporting(0); // turn off error reporting
+	//header("Access-Control-Allow-Origin: *");
 	
-	const LEADERBOARD_PATH = "C:/priv/leaderboard.json";
+	// NB: If moving this file, correct this path.
+	const LEADERBOARD_PATH = __DIR__ . '\\..\\..\\PrivateData\\leaderboard.json';
 	
 	include('lock.php');
 	include('name.php');
