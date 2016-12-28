@@ -16,29 +16,11 @@
 	</head>
 	<body>
 		<script>"use strict";</script>
-		<script src="js/fontfaceonload.js"></script>
-		<script src="js/intersection.js"></script>
-		<script src="js/cookie.js"></script>
-		<script src="js/score.js"></script>
-		<script src="js/button.js"></script>
-		<script src="js/rect.js"></script>
-		<script src="js/draw.js"></script>
-		<script src="js/pipe.js"></script>
-		<script src="js/bird.js"></script>
 		<script src="js/game.js"></script>
 		
 		<div id="game-container">
 			<div id="stats-container"><div id="stats"></div></div>
 			<canvas id="canvas" width="500" height="800"></canvas>
 		</div>
-		
-		<!-- Initialization code -->
-		<script>
-		window.onload = function(){
-			var game = new Game();
-			
-			window.requestAnimationFrame(game.mainLoop.bind(game));
-		};
-		</script>
 	</body>
 </html>
