@@ -1,0 +1,2 @@
+git pull
+./uglify.sh

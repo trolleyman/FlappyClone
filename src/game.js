@@ -1,6 +1,6 @@
 "use strict";
 
-const MIN_CANVAS_WIDTH = 400;
+const MIN_CANVAS_WIDTH = 450;
 const MAX_CANVAS_WIDTH = 1440;
 const MIN_CANVAS_HEIGHT = 750;
 const MAX_CANVAS_HEIGHT = 850;
