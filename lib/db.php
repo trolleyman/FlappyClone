@@ -20,7 +20,7 @@
 	}
 	
 	function getLeaderboard($conn) {
-		$sql = 'SELECT * FROM Leaderboard ORDER BY score DESC LIMIT 10;';
+		$sql = 'SELECT name, score FROM Leaderboard ORDER BY score DESC LIMIT 10;';
 		$result = $conn->query($sql);
 		if ($result === FALSE) {
 			$conn->close();
