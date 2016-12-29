@@ -1,6 +1,8 @@
 "use strict";
 
-const CAMERA_OFFSET_X = 100;
+const MIN_CANVAS_WIDTH = 400;
+const MAX_CANVAS_WIDTH = 1440;
+
 const BIRD_OFFSET_Y = 100;
 const PIPE_SPACING_X = 250;
 
@@ -742,8 +744,13 @@ Game.prototype.updateFlappy = function(dt) {
 }
 
 Game.prototype.draw = function() {
-	// resize canvas (experimental)
-	this.canvas.width = window.innerWidth;
+	// resize canvas
+	if (window.innerWidth < MIN_CANVAS_WIDTH)
+		this.canvas.width = MIN_CANVAS_WIDTH
+	else if (window.innerWidth > MAX_CANVAS_WIDTH)
+		this.canvas.width = MAX_CANVAS_WIDTH
+	else
+		this.canvas.width = window.innerWidth;
 	//this.canvas.height = window.innerHeight;
 
 	// get context
@@ -755,7 +762,7 @@ Game.prototype.draw = function() {
 	
 	// the camera is always at the bird pos.
 	if (this.cameraUpdate)
-		this.cameraX = this.bird.posX - CAMERA_OFFSET_X;
+		this.cameraX = this.bird.posX - 60 - this.canvas.width / 20.0;
 	
 	// if debugging is off, hide the stats panel
 	if (this.debugView) {
@@ -845,7 +852,8 @@ Game.prototype.drawStartUI = function(c) {
 	drawFlappyText(c, "Clone", x, 150+60+20, col);
 	
 	drawImage(c, this.imgs.tapInfo,
-		100 + c.canvas.width/2 - this.imgs.tapInfo.width/2,
+		120 + this.bird.posX - this.cameraX,
+		//200 + this.canvas.width / 20.0 - this.imgs.tapInfo.width/2,
 		(c.canvas.height - BIRD_START_Y) - this.imgs.tapInfo.height/2);
 }
 
