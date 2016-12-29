@@ -926,16 +926,19 @@ Game.prototype.drawLeaderboard = function(c) {
 	c.textBaseline = "top";
 	c.font = "30px FlappyFont";
 	
+	var outline = 3;
+	var scoreW = c.measureText("SCORE").width;
 	var spacing = 8;
 	var x = c.canvas.width - 140;
 	var numx = 60;
 	var y = 200;
 	var titleCol = "gold";
 	c.textAlign = "right";
-	drawFlappyText(c, "NAME", x - spacing, y, titleCol, 3);
-	drawFlappyText(c, "#", numx, y, titleCol, 3);
+	drawFlappyText(c, "NAME", x - spacing, y, titleCol, outline);
+	drawFlappyText(c, "#", numx, y, titleCol, outline);
 	c.textAlign = "left";
-	drawFlappyText(c, "SCORE", x + spacing, y, titleCol, 3);
+	drawFlappyText(c, "SCORE", x + spacing, y, titleCol, outline);
+	var scoreX = x + spacing + scoreW/2;
 	
 	for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
 		var e = this.leaderboard[i];
@@ -975,8 +978,8 @@ Game.prototype.drawLeaderboard = function(c) {
 			drawFlappyText(c, e.name, x - spacing, y, col, 3, space, false);
 		}
 		drawFlappyText(c, (i + 1) + ".", 60, y, col, 3);
-		c.textAlign = "left";
-		drawFlappyText(c, e.score, x + spacing, y, col, 3);
+		c.textAlign = "center";
+		drawFlappyText(c, e.score, scoreX, y, col, 3);
 	}
 }
 
