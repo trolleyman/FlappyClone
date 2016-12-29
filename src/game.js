@@ -725,6 +725,12 @@ Game.prototype.updateFlappy = function(dt) {
 		for (var i = 0; i < this.pipes.length; i++) {
 			var pipe = this.pipes[i];
 			
+			// if pipe is nearby, collision check
+			var bmax = bb.x + bb.w/2, bmin = bb.x - bb.w/2;
+			var pmax = pipe.x + this.imgs.pipeHead.width, pmin = pipe.x;
+			if (bmin > pmax || bmax < pmin)
+				continue; // skip since pipe is not nearby
+			
 			var ru = pipe.bbUpper(this.imgs.pipeHead.width);
 			var rl = pipe.bbLower(this.imgs.pipeHead.width);
 			
