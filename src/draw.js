@@ -28,7 +28,7 @@ function drawImageTiled(c, img, offsetX, offsetY, maxX, maxY) {
 	}
 }
 
-function drawFlappyText(c, text, startX, startY, col, outline) {
+function drawFlappyText(c, text, startX, startY, col, outline, space, left) {
 	function drawText(c, text, startX, startY, outline, x, y) {
 		if (typeof x === "undefined") x = 0;
 		if (typeof y === "undefined") y = 0;
@@ -38,6 +38,41 @@ function drawFlappyText(c, text, startX, startY, col, outline) {
 	}
 	if (typeof col === "undefined") col = "white";
 	if (typeof outline === "undefined") outline = 5;
+	
+	if (typeof space !== "undefined") {
+		// ensure that text doesn't take up more than space pixels.
+		if (space <= 0) {
+			return;
+		}
+		
+		var dotsW = c.measureText('...').width;
+		var measureWidth = function(s) {
+			return c.measureText(s).width + 2*outline;
+		};
+		var measureWidthWithDots = function(s) {
+			return measureWidth(s) + dotsW;
+		};
+
+		// measure current text
+		var w = measureWidth(text);
+		var truncated = false;
+		while (w > space && text.length !== 0) {
+			if (left) // truncate from left if left is true
+				text = text.substring(1, text.length);
+			else
+				text = text.substring(0, text.length-1);
+			truncated = true;
+			w = measureWidthWithDots(text);
+		}
+		// text is truncated
+		// if left is true, add '...' on the left instead of the right.
+		if (truncated) {
+			if (left)
+				text = '...' + text;
+			else
+				text = text + '...';
+		}
+	}
 	
 	c.fillStyle = "black";
 	drawText(c, text, startX, startY, outline,  1,  1);

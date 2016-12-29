@@ -920,11 +920,12 @@ Game.prototype.drawLeaderboard = function(c) {
 	
 	var spacing = 8;
 	var x = c.canvas.width - 140;
+	var numx = 60;
 	var y = 200;
 	var titleCol = "gold";
 	c.textAlign = "right";
 	drawFlappyText(c, "NAME", x - spacing, y, titleCol, 3);
-	drawFlappyText(c, "#", 60, y, titleCol, 3);
+	drawFlappyText(c, "#", numx, y, titleCol, 3);
 	c.textAlign = "left";
 	drawFlappyText(c, "SCORE", x + spacing, y, titleCol, 3);
 	
@@ -962,7 +963,8 @@ Game.prototype.drawLeaderboard = function(c) {
 		} else if (this.errorSubmitting && e.user) {
 			drawFlappyText(c, "ERROR", x - spacing, y, col, 3);
 		} else {
-			drawFlappyText(c, e.name, x - spacing, y, col, 3);
+			var space = x - 2*spacing - numx;
+			drawFlappyText(c, e.name, x - spacing, y, col, 3, space, false);
 		}
 		drawFlappyText(c, (i + 1) + ".", 60, y, col, 3);
 		c.textAlign = "left";
