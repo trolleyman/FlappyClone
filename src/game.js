@@ -179,7 +179,8 @@ function Game() {
 		return false;
 	}).bind(this);
 	
-	this.buttonSubmit = new DisableButton(this.canvas.width/2 + spacing/2, dy,
+	this.buttonSubmit = new DisableButton(
+		(function() { return this.canvas.width/2 + spacing/2; }).bind(this), dy,
 		this.imgs.buttonSubmit, this.imgs.buttonSubmitDisabled, submitFunction, disableFunction);
 	
 	dy = 400;
@@ -187,7 +188,8 @@ function Game() {
 		(function() { return this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2; }).bind(this), dy,
 		this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
-	this.buttonRetry = new Button(this.canvas.width/2 + spacing/2, dy,
+	this.buttonRetry = new Button(
+		(function() { return this.canvas.width/2 + spacing/2; }).bind(this), dy,
 		this.imgs.buttonRetry, setState.bind(this, STATE_LEADERBOARD));
 
 	// init pipes
@@ -740,6 +742,10 @@ Game.prototype.updateFlappy = function(dt) {
 }
 
 Game.prototype.draw = function() {
+	// resize canvas (experimental)
+	this.canvas.width = window.innerWidth;
+	//this.canvas.height = window.innerHeight;
+
 	// get context
 	var c = this.canvas.getContext("2d");
 	// clear canvas - don't technically need this, but it's nice
