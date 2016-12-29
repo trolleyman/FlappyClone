@@ -18,7 +18,6 @@ const WHICH_CODE_SPACE = 32;
 
 window.onload = function(){
 	var game = new Game();
-	
 	window.requestAnimationFrame(game.mainLoop.bind(game));
 };
 
@@ -121,18 +120,29 @@ function Game() {
 	this.imgs.buttonRetry = this.loadImage("img/buttonRetry.png");
 	
 	// setup buttons
-	var px = 50, py = 50;
 	var setState = Object.getOwnPropertyDescriptor(Game.prototype, 'state').set;
+	var spacing = 20;
+	var px = 50, py = 50;
 	this.buttonPlay  = new Button(px, py, this.imgs.buttonPlay , setState.bind(this, STATE_PLAYING));
 	this.buttonPause = new Button(px, py, this.imgs.buttonPause, setState.bind(this, STATE_PAUSED));
 	var dy = 400;
-	this.buttonRestart1 = new Button(0, dy, this.imgs.buttonRestart,
+	var getX = (function() {
+		var w = spacing + this.imgs.buttonRestart.width + this.imgs.buttonLeaderboard.width;
+		var x = this.canvas.width/2 - w/2;
+		return x;
+	}).bind(this);
+	this.buttonRestartDeath = new Button(
+		getX, dy,
+		this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
-	this.buttonLeaderboard = new Button(0, dy, this.imgs.buttonLeaderboard,
+	this.buttonLeaderboard = new Button(
+		(function() { return getX() + spacing + this.imgs.buttonRestart.width; }).bind(this), dy,
+		this.imgs.buttonLeaderboard,
 		setState.bind(this, STATE_LEADERBOARD));
 	dy = 670;
-	var spacing = 20;
-	this.buttonRestart2 = new Button(0, dy, this.imgs.buttonRestart,
+	this.buttonRestartLeaderboard = new Button(
+		(function() { return this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2; }).bind(this), dy,
+		this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
 	
 	var submitFunction = (function() {
@@ -173,11 +183,13 @@ function Game() {
 		this.imgs.buttonSubmit, this.imgs.buttonSubmitDisabled, submitFunction, disableFunction);
 	
 	dy = 400;
-	this.buttonRestartLeaderboardError = new Button(0, dy, this.imgs.buttonRestart,
+	this.buttonRestartLeaderboardError = new Button(
+		(function() { return this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2; }).bind(this), dy,
+		this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
 	this.buttonRetry = new Button(this.canvas.width/2 + spacing/2, dy,
 		this.imgs.buttonRetry, setState.bind(this, STATE_LEADERBOARD));
-	
+
 	// init pipes
 	this.pipes = [];
 	for (var i = 0; i < 10; i++) {
@@ -261,7 +273,6 @@ Game.prototype.notfiyLoadedImage = function() {
 	this.imagesLoadedNum += 1;
 	
 	if (this.imagesLoaded) {
-		this.finishImageLoading();
 		console.log(this.imagesLoadedNum + " images loaded.");
 		this.notifyLoadedResource();
 	}
@@ -275,16 +286,6 @@ Game.prototype.notifyLoadedResource = function() {
 	if (this.imagesLoaded && this.flappyFontLoaded) {
 		this.state = STATE_START;
 	}
-}
-
-Game.prototype.finishImageLoading = function() {
-	var spacing = 20;
-	var w = spacing + this.imgs.buttonRestart.width + this.imgs.buttonLeaderboard.width;
-	var x = this.canvas.width/2 - w/2;
-	this.buttonRestart1.x = x;
-	this.buttonLeaderboard.x = x + this.imgs.buttonRestart.width + spacing;
-	this.buttonRestart2.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
-	this.buttonRestartLeaderboardError.x = this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2;
 }
 
 Object.defineProperty(Game.prototype, 'imagesLoaded', {
@@ -368,7 +369,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.groundVisible = true;
 			
 		} else if (s === STATE_DEATH) {
-			this.buttons = [this.buttonRestart1, this.buttonLeaderboard];
+			this.buttons = [this.buttonRestartDeath, this.buttonLeaderboard];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
@@ -388,7 +389,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.bird.velX = 0;
 			
 		} else if (s === STATE_LEADERBOARD) {
-			this.buttons = [this.buttonRestart2, this.buttonSubmit];
+			this.buttons = [this.buttonRestartLeaderboard, this.buttonSubmit];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
 			this.oscillate = false;

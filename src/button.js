@@ -1,13 +1,36 @@
 
 function Button(x, y, img, f) {
-	this.x = x;
-	this.y = y;
+	this.x = x; // this can be a function
+	this.y = y; // this can also be a function
 	this.img = img;
 	this.f = f;
 }
 
+Object.defineProperty(Button.prototype, 'x', {
+	get: function() {
+		if (typeof this._x === "function") return this._x();
+		else return this._x;
+	},
+	set: function(x) { this._x = x; },
+});
+Object.defineProperty(Button.prototype, 'y', {
+	get: function() {
+		if (typeof this._y === "function") return this._y();
+		else return this._y;
+	},
+	set: function(y) { this._y = y; },
+});
+
 Button.prototype.draw = function(c) {
-	drawImage(c, this.img, this.x, this.y);
+	var x = this.x;
+	if (typeof this.x === "function")
+		x = this.x(); // generate x
+	
+	var y = this.y;
+	if (typeof this.y === "function")
+		y = this.y(); // generate y
+
+	drawImage(c, this.img, x, y);
 }
 
 Button.prototype.handleClick = function(x, y) {
