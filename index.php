@@ -16,8 +16,9 @@
 	</head>
 	<body>
 		<script>"use strict";</script>
+<?php if (!in_array($_SERVER['REMOTE_ADDR'], array('127.0.0.1', '::1'))) { ?>
 		<script src="js/game.js"></script>
-		<!--
+<?php } else { ?>
 		<script src="src/fontfaceonload.js"></script>
 		<script src="src/intersection.js"></script>
 		<script src="src/cookie.js"></script>
@@ -28,7 +29,7 @@
 		<script src="src/pipe.js"></script>
 		<script src="src/bird.js"></script>
 		<script src="src/game.js"></script>
-		-->
+<?php } ?>
 		
 		<div id="game-container">
 			<div id="stats-container" style="visibility: hidden;"><div id="stats"></div></div>

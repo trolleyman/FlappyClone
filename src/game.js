@@ -319,6 +319,7 @@ Object.defineProperty(Game.prototype, 'state', {
 		const GRAVITY = -800;
 		console.log("STATE CHANGE: " + stateToString(this.state_) + " => " + stateToString(s));
 		this.stateChangeTime = Date.now().valueOf();
+		var prevState = this.state_;
 		this.state_ = s;
 		if (s === STATE_LOADING) {
 			this.buttons = [];
@@ -360,6 +361,15 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
+			
+			if (prevState !== STATE_PAUSED) {
+				// regen pipes
+				for (var i = 0; i < 10; i++) {
+					this.pipes[i].passed = true;
+					this.pipes[i].x = -200;
+				}
+				this.pipeMax = this.bird.posX + Math.max(800, this.canvas.width);
+			}
 			
 		} else if (s === STATE_PAUSED) {
 			this.buttons = [this.buttonPlay];
@@ -636,14 +646,6 @@ Game.prototype.update = function() {
 	// check if time to start
 	if (this.state === STATE_START && this.flapButtonDown) {
 		this.state = STATE_PLAYING;
-		
-		// regen pipes
-		var x = this.bird.posX + 800;
-		for (var i = 0; i < 10; i++) {
-			this.pipes[i] = new Pipe(x);
-			x += PIPE_SPACING_X;
-		}
-		this.pipeMax = x;
 	}
 	
 	// update flappy frame #
