@@ -5,9 +5,10 @@ const LEADERBOARD_API_PATH = "api/leaderboard.php";
 const LEADERBOARD_URL = LEADERBOARD_API_PATH;
 //const LEADERBOARD_URL = "http://trolleyman.org/FlappyClone/" + LEADERBOARD_API_PATH;
 //const LEADERBOARD_URL = "http://localhost:80/" + LEADERBOARD_API_PATH;
+const LEGAL_SYMBOLS = "-_";
 
 // NB: If these constants are updated, remember to update the PHP AWS versions (in priv/name.php)!!
-const MAX_NAME_LENGTH = 10;
+const MAX_NAME_LENGTH = 16;
 const NUM_LEADERBOARD_ENTRIES = 10;
 
 function setBestScore(score) {
@@ -41,15 +42,20 @@ function isLegalName(name) {
 }
 
 // NB: If updating these functions, ensure that the PHP AWS functions are also updated (in priv/name.php)!
-function isLegalNameChar(c) {
-	if (c.charCodeAt(0) >= 'a'.charCodeAt(0) && c.charCodeAt(0) <= 'z'.charCodeAt(0)) {
+function isLegalNameChar(ch) {
+	var cd = function(s) { return s.charCodeAt(0); };
+	var c = ch.charCodeAt(0);
+	if (c >= cd('a') && c <= cd('z')) {
 		// lowercase chars
 		return true;
-	} else if (c.charCodeAt(0) >= 'A'.charCodeAt(0) && c.charCodeAt(0) <= 'Z'.charCodeAt(0)) {
+	} else if (c >= cd('A') && c <= cd('Z')) {
 		// uppercase chars
 		return true;
-	} else if (c.charCodeAt(0) >= '1'.charCodeAt(0) && c.charCodeAt(0) <= '9'.charCodeAt(0)) {
+	} else if (c >= cd('1') && c <= cd('9')) {
 		// digits
+		return true;
+	} else if (LEGAL_SYMBOLS.indexOf(ch) !== -1) {
+		// symbols
 		return true;
 	}
 	return false;

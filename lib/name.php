@@ -1,7 +1,8 @@
 <?php
 	// NB: If these constants are updated, remember to update the JavaScript versions (in js/score.js)!!
 	const NUM_LEADERBOARD_ENTRIES = 10;
-	const MAX_NAME_LENGTH = 10;
+	const MAX_NAME_LENGTH = 16;
+	const LEGAL_SYMBOLS = '-_';
 	
 	// NB: If updating these functions, ensure that the JavaScript functions are also updated (in js/score.js)!
 	function isLegalName($name, &$reason) {
@@ -38,6 +39,8 @@
 			return TRUE;
 		} else if (ord($c) >= ord('1') && ord($c) <= ord('9')) {
 			// digits
+			return TRUE;
+		} else if (strpos(LEGAL_SYMBOLS, $c) !== FALSE) {
 			return TRUE;
 		}
 		return FALSE;
