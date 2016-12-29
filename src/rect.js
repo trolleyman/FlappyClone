@@ -1,4 +1,8 @@
 function Rect(x, y, w, h, rot) {
+	this.reuse(x, y, w, h, rot);
+}
+
+Rect.prototype.reuse = function(x, y, w, h, rot) {
 	this.x = x;
 	this.y = y;
 	this.w = w;

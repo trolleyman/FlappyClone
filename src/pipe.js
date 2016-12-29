@@ -1,6 +1,6 @@
 
 function Pipe(x, y, spacing) {
-	this.reuse(x);
+	this.reuse(x, y, spacing);
 }
 
 Pipe.prototype.reuse = function(x, y, spacing) {
@@ -13,13 +13,19 @@ Pipe.prototype.reuse = function(x, y, spacing) {
 	this.y = y;
 	this.spacing = spacing;
 	this.passed = false;
+	if (typeof this.upperCache === "undefined")
+		this.upperCache = new Rect();
+	if (typeof this.lowerCache === "undefined")
+		this.lowerCache = new Rect();
 }
 
 const PIPE_H = 2000;
 
 Pipe.prototype.bbUpper = function(w) {
-	return new Rect(this.x + w/2, this.y + this.spacing + PIPE_H/2, w, PIPE_H, 0);
+	this.upperCache.reuse(this.x + w/2, this.y + this.spacing + PIPE_H/2, w, PIPE_H, 0);
+	return this.upperCache;
 }
 Pipe.prototype.bbLower = function(w) {
-	return new Rect(this.x + w/2, this.y / 2, w, this.y, 0);
+	this.lowerCache.reuse(this.x + w/2, this.y / 2, w, this.y, 0);
+	return this.lowerCache;
 }
