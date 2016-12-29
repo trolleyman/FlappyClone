@@ -2,6 +2,8 @@
 
 const MIN_CANVAS_WIDTH = 400;
 const MAX_CANVAS_WIDTH = 1440;
+const MIN_CANVAS_HEIGHT = 750;
+const MAX_CANVAS_HEIGHT = 850;
 
 const BIRD_OFFSET_Y = 100;
 const PIPE_SPACING_X = 250;
@@ -752,14 +754,21 @@ Game.prototype.updateFlappy = function(dt) {
 }
 
 Game.prototype.draw = function() {
-	// resize canvas
+	// resize canvas width
 	if (window.innerWidth < MIN_CANVAS_WIDTH)
 		this.canvas.width = MIN_CANVAS_WIDTH
 	else if (window.innerWidth > MAX_CANVAS_WIDTH)
 		this.canvas.width = MAX_CANVAS_WIDTH
 	else
 		this.canvas.width = window.innerWidth;
-	//this.canvas.height = window.innerHeight;
+	
+	// resize canvas height
+	if (window.innerHeight < MIN_CANVAS_HEIGHT)
+		this.canvas.height = MIN_CANVAS_HEIGHT
+	else if (window.innerHeight > MAX_CANVAS_HEIGHT)
+		this.canvas.height = MAX_CANVAS_HEIGHT
+	else
+		this.canvas.height = window.innerHeight;
 
 	// get context
 	var c = this.canvas.getContext("2d");
