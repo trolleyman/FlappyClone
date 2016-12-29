@@ -420,6 +420,7 @@ Object.defineProperty(Game.prototype, 'state', {
 				this.leaderboard = leaderboard;
 				this.leaderboardLoading = false;
 				console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
+				console.log("Leaderboard: " + JSON.stringify(leaderboard));
 				if (this.newBestScore) {
 					// find if the user fits on the leaderboard
 					var pos = -1;

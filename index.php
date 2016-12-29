@@ -1,3 +1,4 @@
+<?php include('lib/common.php'); ?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -16,7 +17,7 @@
 	</head>
 	<body>
 		<script>"use strict";</script>
-<?php if (!isset($_ENV['TROLLEYMAN_DEBUG'])) { ?>
+<?php if (!isDebug()) { ?>
 		<script src="js/game.js"></script>
 <?php } else { ?>
 		<script src="src/fontfaceonload.js"></script>
