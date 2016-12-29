@@ -38,6 +38,8 @@
 		$sql = 'INSERT INTO Leaderboard (name, score) VALUES (?, ?)';
 		$stmt = $conn->prepare($sql);
 		$stmt->bind_param('si', $name, $score);
+		
+		// execute statement
 		if (!$stmt->execute()) {
 			$stmt->close();
 			$conn->close();
