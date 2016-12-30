@@ -2,7 +2,9 @@
 
 http://www.trolleyman.org/FlappyClone/
 
-Yet another Flappy Bird clone, but this time with a global leaderboard system.
+A Flappy Bird clone, but with a global leaderboard.
+
+Coded using JavaScript, PHP and MySQL.
 
 <img src="img/screenshotStart.png" width="210">
 <img src="img/screenshotPlaying.png" width="210">
