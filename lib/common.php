@@ -6,8 +6,7 @@
 	}
 	
 	function isDebug() {
-		// return isset($_ENV['TROLLEYMAN_DEBUG']);
-		return false;
+		return isset($_ENV['TROLLEYMAN_DEBUG']);
 	}
 	
 	if (isDebug())

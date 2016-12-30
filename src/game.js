@@ -4,6 +4,7 @@ const MIN_CANVAS_WIDTH = 450;
 const MAX_CANVAS_WIDTH = 1440;
 const MIN_CANVAS_HEIGHT = 750;
 const MAX_CANVAS_HEIGHT = 850;
+const MAX_LEADERBOARD_WIDTH = 700;
 
 const BIRD_OFFSET_Y = 100;
 const PIPE_SPACING_X = 250;
@@ -944,16 +945,22 @@ Game.prototype.drawLeaderboard = function(c) {
 	c.textBaseline = "top";
 	c.font = "30px FlappyFont";
 	
+	var totalW = Math.min(c.canvas.width, MAX_LEADERBOARD_WIDTH);
+	
+	var left = c.canvas.width/2 - totalW/2;
+	var right = c.canvas.width - left;
 	var outline = 3;
 	var scoreW = c.measureText("SCORE").width;
+	
+	var numX = left + 60;
 	var spacing = 8;
-	var x = c.canvas.width - 140;
-	var numx = 60;
+	var x = right - 140;
 	var y = 200;
 	var titleCol = "gold";
+
 	c.textAlign = "right";
 	drawFlappyText(c, "NAME", x - spacing, y, titleCol, outline);
-	drawFlappyText(c, "#", numx, y, titleCol, outline);
+	drawFlappyText(c, "#", numX, y, titleCol, outline);
 	c.textAlign = "left";
 	drawFlappyText(c, "SCORE", x + spacing, y, titleCol, outline);
 	var scoreX = x + spacing + scoreW/2;
@@ -992,10 +999,10 @@ Game.prototype.drawLeaderboard = function(c) {
 		} else if (this.errorSubmitting && e.user) {
 			drawFlappyText(c, "ERROR", x - spacing, y, col, 3);
 		} else {
-			var space = x - 2*spacing - numx;
+			var space = x - 2*spacing - numX;
 			drawFlappyText(c, e.name, x - spacing, y, col, 3, space, false);
 		}
-		drawFlappyText(c, (i + 1) + ".", 60, y, col, 3);
+		drawFlappyText(c, (i + 1) + ".", numX, y, col, 3);
 		c.textAlign = "center";
 		drawFlappyText(c, e.score, scoreX, y, col, 3);
 	}
