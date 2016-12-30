@@ -4,7 +4,10 @@ http://www.trolleyman.org/FlappyClone/
 
 Yet another Flappy Bird clone, but this time with a leaderboard system.
 
-!()[img/screenshot.png]
+!()[img/screenshotStart.png]
+!()[img/screenshotPlaying.png]
+!()[img/screenshotDeath.png]
+!()[img/screenshotLeaderboard.gif]
 
 ## Controls
 
