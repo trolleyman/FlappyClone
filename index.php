@@ -29,12 +29,13 @@
 		<script src="src/draw.js"></script>
 		<script src="src/pipe.js"></script>
 		<script src="src/bird.js"></script>
+		<script src="src/net.js"></script>
 		<script src="src/game.js"></script>
 <?php } ?>
 		
 		<div id="game-container">
 			<div id="stats-container" style="visibility: hidden;"><div id="stats"></div></div>
-			<canvas id="canvas" width="500" height="800"></canvas>
+			<canvas id="canvas"></canvas>
 		</div>
 	</body>
 </html>

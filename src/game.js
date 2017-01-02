@@ -240,12 +240,16 @@ function Game() {
 		document.addEventListener(visibilityChange, handleVisibilityChange, false);
 	}
 	
+	// init websockets
+	this.net = new Net(this);
+	
 	// init stats
 	this.stats = document.getElementById("stats");
 	
 	// init vars
-	this.debugAllowed = false; // is debugging allowed?
-	this.debugView = false;
+	this.debugAllowed = true; // is debugging allowed?
+	this.debugView = this.debugAllowed;
+	this.drawCollisionBoxes = false;
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.flappyDt = 0.08; // seconds per flappy frame
 	this.paused = false;
@@ -569,6 +573,9 @@ Game.prototype.processKeys = function() {
 		if (code === "Digit2" && this.debugAllowed) {
 			this.cameraUpdate = !this.cameraUpdate;
 		}
+		if (code === "Digit3" && this.debugAllowed) {
+			this.drawCollisionBoxes = !this.drawCollisionBoxes;
+		}
 		
 		console.log("Key pressed: " + e.which + " '" + key + "' (" + code + ")");
 		
@@ -616,6 +623,8 @@ Game.prototype.togglePause = function() {
 			this.prevTime = NaN;
 	}
 }
+
+// ================================= U P D A T E =================================
 
 Game.prototype.update = function() {
 	// check buttons
@@ -754,6 +763,8 @@ Game.prototype.updateFlappy = function(dt) {
 		}
 	}
 }
+
+// ================================= D R A W I N G =================================
 
 Game.prototype.draw = function() {
 	// resize canvas width
@@ -1042,11 +1053,12 @@ Game.prototype.drawStats = function() {
 	var html = "";
 	html += "Score: " + this.score + "<br>";
 	html += "Paused: " + this.paused + "<br>";
+	html += "Ping: " + (this.net.ping * 1000).toFixed(0) + "ms<br>";
 	html += "State: " + stateToString(this.state) + "<br>";
-	html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
-	html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
-	html += "VelX: " + this.bird.velX.toFixed(2) + "<br>";
-	html += "VelY: " + this.bird.velY.toFixed(2) + "<br>";
+	//html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
+	//html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
+	//html += "VelX: " + this.bird.velX.toFixed(2) + "<br>";
+	//html += "VelY: " + this.bird.velY.toFixed(2) + "<br>";
 	html += "Gravity: " + this.gravity;
 	
 	this.stats.innerHTML = html;
@@ -1058,7 +1070,7 @@ Game.prototype.drawFlappy = function(c) {
 	var y = c.canvas.height - this.bird.posY;
 	var ang = this.bird.ang;
 	
-	if (this.debugView) {
+	if (this.drawCollisionBoxes) {
 		// Draw velocity vector
 		c.beginPath();
 		c.moveTo(x, y);
@@ -1094,7 +1106,7 @@ Game.prototype.drawFlappy = function(c) {
 	c.translate(-offsetX, -offsetY);
 	c.rotate(-ang); // faster than c.save(); c.restore();
 	c.translate(-x, -y);
-	if (this.debugView) {
+	if (this.drawCollisionBoxes) {
 		var r = this.bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height, c.canvas.height);
 		r.x -= this.cameraX;
 		c.strokeStyle = "green";
@@ -1117,7 +1129,7 @@ Game.prototype.drawPipe = function(c, pipe) {
 	drawImageTiled(c, this.imgs.pipe, x, ly, 1, undefined);
 	drawImage(c, this.imgs.pipeHead, x, ly);
 	
-	if (this.debugView) {
+	if (this.drawCollisionBoxes) {
 		var ru = pipe.bbUpper(this.imgs.pipeHead.width);
 		ru.x -= this.cameraX;
 		var rl = pipe.bbLower(this.imgs.pipeHead.width);
