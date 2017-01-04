@@ -251,6 +251,7 @@ function Game() {
 	this.debugView = this.debugAllowed;
 	this.drawCollisionBoxes = false;
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
+	this.godMode = false;
 	this.flappyDt = 0.08; // seconds per flappy frame
 	this.paused = false;
 	this.cameraX = 0;
@@ -576,6 +577,9 @@ Game.prototype.processKeys = function() {
 		if (code === "Digit3" && this.debugAllowed) {
 			this.drawCollisionBoxes = !this.drawCollisionBoxes;
 		}
+		if (code === "Digit4" && this.debugAllowed) {
+			this.godMode = !this.godMode;
+		}
 		
 		console.log("Key pressed: " + e.which + " '" + key + "' (" + code + ")");
 		
@@ -677,9 +681,15 @@ Game.prototype.update = function() {
 				this.score += 1;
 				pipe.passed = true;
 			}
+			
 			if (pipe.x + this.imgs.pipeHead.width < this.cameraX) {
 				// not valid pipe, reuse.
-				pipe.reuse(this.pipeMax);
+				var x = this.pipeMax;
+				pipe.reuse(x);
+				this.net.getPipe(x - this.bird.posX, (function(x, pipe, y) {
+					console.log("Pipe received: " + x + ", " + y);
+					pipe.reuse(x, y, undefined, true);
+				}).bind(this, x, pipe));
 				this.pipeMax += PIPE_SPACING_X;
 			}
 		}
@@ -690,7 +700,10 @@ Game.prototype.updateFlappy = function(dt) {
 	var bird = this.bird;
 	
 	bird.velY += dt * this.gravity;
-
+	
+	if (this.godMode && this.state === STATE_PLAYING)
+		bird.velY = 0;
+	
 	if (this.oscillate) {
 		// oscillate around a point if in start mode
 		bird.t += dt;
@@ -749,16 +762,18 @@ Game.prototype.updateFlappy = function(dt) {
 			var ru = pipe.bbUpper(this.imgs.pipeHead.width);
 			var rl = pipe.bbLower(this.imgs.pipeHead.width);
 			
-			var intersected = false;
-			if (bb.intersects(ru)) {
-				console.log("bird intersects with pipe " + i + " (UPPER)");
-				intersected = true;
-			} else if (bb.intersects(rl)) {
-				console.log("bird intersects with pipe " + i + " (LOWER)");
-				intersected = true;
-			}
-			if (intersected) {
-				this.state = STATE_DEATH;
+			if (!this.godMode) {
+				var intersected = false;
+				if (bb.intersects(ru)) {
+					console.log("bird intersects with pipe " + i + " (UPPER)");
+					intersected = true;
+				} else if (bb.intersects(rl)) {
+					console.log("bird intersects with pipe " + i + " (LOWER)");
+					intersected = true;
+				}
+				if (intersected) {
+					this.state = STATE_DEATH;
+				}
 			}
 		}
 	}
@@ -1056,6 +1071,7 @@ Game.prototype.drawStats = function() {
 	html += "State: " + stateToString(this.state) + "<br>";
 	html += "Connected: " + this.net.connected + "<br>";
 	html += "Ping: " + this.net.pingString + "<br>";
+	html += "God Mode: " + this.godMode + "<br>";
 	//html += "PosX: " + this.bird.posX.toFixed(2) + "<br>";
 	//html += "PosY: " + this.bird.posY.toFixed(2) + "<br>";
 	//html += "VelX: " + this.bird.velX.toFixed(2) + "<br>";
@@ -1135,7 +1151,7 @@ Game.prototype.drawPipe = function(c, pipe) {
 		ru.x -= this.cameraX;
 		var rl = pipe.bbLower(this.imgs.pipeHead.width);
 		rl.x -= this.cameraX; 
-		c.strokeStyle = "blue";
+		c.strokeStyle = pipe.multiplayer ? "red" : "blue";
 		ru.draw(c);
 		rl.draw(c);
 		

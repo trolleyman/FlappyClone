@@ -1,17 +1,21 @@
 
-function Pipe(x, y, spacing) {
-	this.reuse(x, y, spacing);
+function Pipe(x, y, spacing, multiplayer) {
+	this.reuse(x, y, spacing, multiplayer);
 }
 
-Pipe.prototype.reuse = function(x, y, spacing) {
+Pipe.prototype.reuse = function(x, y, spacing, multiplayer) {
 	if (typeof y === "undefined")
-		y = Math.random() * 300 + 200;
+		y = Math.random();
+	y = y * 300 + 200;
 	if (typeof spacing === "undefined")
 		spacing = 150;
+	if (typeof multiplayer === "undefined")
+		multiplayer = false;
 	
 	this.x = x;
 	this.y = y;
 	this.spacing = spacing;
+	this.multiplayer = multiplayer;
 	this.passed = false;
 	if (typeof this.upperCache === "undefined")
 		this.upperCache = new Rect();
