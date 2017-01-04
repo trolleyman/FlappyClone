@@ -32,13 +32,9 @@ Handler.prototype.wsOnClose = function(code, reason) {
 Handler.prototype.wsOnMessage = function(data) {
 	console.log("< " + this.id + ": " + data);
 	var msg = JSON.parse(data);
-	if (msg.command === "heartbeat") {
+	if (msg.command === "ping") {
 		var now = Date.now().valueOf() / 1000.0;
-		var reply = {
-			command: "heartbeat",
-			serverTime: now,
-		};
-		this.send(JSON.stringify(reply));
+		this.send('{"command":"pong"}');
 	} else {
 		console.log(this.id + " error: unknown command: " + this.command);
 	}

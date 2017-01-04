@@ -1,34 +1,47 @@
 
 function Net(game) {
-	this.ping = undefined;
 	this.game = game;
+	this.connected = false;
 	
-	// the offset that is applied to the times received from the server in order to
-	// convert it to client time
-	this.clientTimeOffset = 0;
-	this.hbSentTime = null;
+	this.ping = undefined;
+	this.pingSentTime = undefined;
 	
-	this.ws = new WebSocket("ws://" + document.location.hostname + ":8080", 'FlappyClone');
-	this.ws.onopen = this.wsOnOpen.bind(this);
-	this.ws.onclose = this.wsOnClose.bind(this);
-	this.ws.onerror = this.wsOnError.bind(this);
-	this.ws.onmessage = this.wsOnMessage.bind(this);
+	try {
+		this.ws = new WebSocket("ws://" + document.location.hostname + ":8080", 'FlappyClone');
+		this.ws.onopen = this.wsOnOpen.bind(this);
+		this.ws.onclose = this.wsOnClose.bind(this);
+		this.ws.onerror = this.wsOnError.bind(this);
+		this.ws.onmessage = this.wsOnMessage.bind(this);
+	} catch (e) {
+		this.connected = false;
+		console.error("Could not open WebSocket: " + e);
+	}
 }
+
+Object.defineProperty(Net.prototype, "pingString", {get: function() {
+	if (typeof this.ping === "undefined" || !this.connected) {
+		return '--ms';
+	} else {
+		return (this.ping * 1000).toFixed(0) + 'ms';
+	}
+}});
 
 Net.prototype.wsOnOpen = function(e) {
 	console.log("Opened WebSocket");
-	this.sendHeartbeat();
+	this.connected = true;
+	this.sendPing();
 }
 
 Net.prototype.wsOnClose = function(e) {
+	this.connected = false;
 	if (e.wasClean)
-		console.log("Closed WebSocket: " + e.code + " " + e.reason);
+		console.log("WebSocket: Connection terminated: " + e.code + " " + e.reason);
 	else
-		console.log("Error: Closed WebSocket (NOT CLEAN): " + e.code + " " + e.reason);
+		console.error("WebSocket: Connection terminated abruptly: " + e.code + " " + e.reason);
 }
 
 Net.prototype.wsOnError = function(e) {
-	console.log("Error: WebSocket: " + e);
+	console.error("WebSocket: " + e);
 }
 
 Net.prototype.wsOnMessage = function(e) {
@@ -37,33 +50,29 @@ Net.prototype.wsOnMessage = function(e) {
 	try {
 		msg = JSON.parse(e.data);
 	} catch (e) {
-		console.log("Error: WebSocket: Could not parse JSON message: " + e.data);
+		console.error("WebSocket: Could not parse JSON message: " + e.data);
 		return;
 	}
-	if (msg.command === "heartbeat") { // heartbeat
-		this.handleHeartbeat(msg);
+	if (msg.command === "pong") {
+		this.handlePong();
 	} else {
-		console.log("Error: WebSocket: Unknown message type: " + JSON.stringify(msg));
+		console.error("WebSocket: Unknown message type: " + JSON.stringify(msg));
 	}
 }
 
-Net.prototype.sendHeartbeat = function() {
-	this.ws.send('{"command":"heartbeat"}');
-	this.hbSentTime = Date.now().valueOf() / 1000.0;
+Net.prototype.sendPing = function() {
+	this.ws.send('{"command":"ping"}');
+	this.pingSentTime = Date.now().valueOf() / 1000.0;
 }
 
-Net.prototype.handleHeartbeat = function(msg) {
-	if (this.hbSentTime === null) {
-		console.log("Error: Heartbeat received, but no heartbeat sent");
+Net.prototype.handlePong = function() {
+	if (!this.pingSentTime) {
+		console.error("Pong received, but no heartbeat sent");
 	} else {
 		var now = Date.now().valueOf() / 1000.0;
-		var ping = now - this.hbSentTime;
-		if (typeof this.ping === "undefined")
-			this.ping = ping;
-		this.ping = (this.ping + ping) / 2;
-		this.clientTimeOffset = now - (this.ping / 2) - msg.serverTime;
-		this.hbSentTime = null;
+		this.ping = now - this.pingSentTime;
+		this.pingSentTime = undefined;
 	}
 	
-	setTimeout(this.sendHeartbeat.bind(this), 500);
+	setTimeout(this.sendPing.bind(this), 500);
 }
