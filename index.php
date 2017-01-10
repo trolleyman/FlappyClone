@@ -9,7 +9,7 @@
 		
 		<!-- Resizes viewport to look good on mobile -->
 		<!-- http://stackoverflow.com/questions/11689353/disable-pinch-zoom-on-mobile-web -->
-		<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+		<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height"/>
 		<meta name="HandheldFriendly" content="true"/>
 		
 		<!-- Icon stuff. Generated using http://realfavicongenerator.net -->
