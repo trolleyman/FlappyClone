@@ -8,7 +8,9 @@
 		<link rel="stylesheet" href="css/game.css">
 		
 		<!-- Resizes viewport to look good on mobile -->
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- http://stackoverflow.com/questions/11689353/disable-pinch-zoom-on-mobile-web -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+		<meta name="HandheldFriendly" content="true"/>
 		
 		<!-- Icon stuff. Generated using http://realfavicongenerator.net -->
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
