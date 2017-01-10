@@ -37,44 +37,40 @@ function stateToString(state) {
 	else return "Invalid state: " + state;
 }
 
+function copyTouch(t) {
+	return { identifier: touch.identifier, pageX: touch.pageX, pageY: touch.pageY };
+}
+
 function Game() {
 	// init canvas
 	this.canvas = document.getElementById("canvas");
-	var that = this;
-	this.canvas.onmousedown = function(e) {
-		if (e.button === 0) {
-			that.lmbDown = true;
-			that.mouseX = e.offsetX;
-			that.mouseY = e.offsetY;
-			console.log("lmb pressed (" + that.mouseX + ", " + that.mouseY + ")");
-		}
-	};
-	this.canvas.onmouseup = function(e) {
-		if (e.button === 0) {
-			that.lmbDown = false;
-			console.log("lmb released");
-		}
-	};
-	this.lmbDown = false;
-	this.lmbDownPrev = false;
-	this.mouseX = 0;
-	this.mouseY = 0;
+	
+	// init mouse
+	this.canvas.onmousedown = this.onmousedown.bind(this);
+	this.canvas.onmouseup = this.onmouseup.bind(this);
+	
+	// init touch
+	this.canvas.addEventListener("touchstart" , this.ontouchstart .bind(this));
+	this.canvas.addEventListener("touchend"   , this.ontouchend   .bind(this));
+	this.canvas.addEventListener("touchcancel", this.ontouchcancel.bind(this));
+	this.canvas.addEventListener("touchmove"  , this.ontouchmove  .bind(this));
+	this.touches = [];
 	
 	// setup keys
 	this.keyCodes = [];
 	this.keyWhichs = [];
 	this.keyUps = [];
 	this.keyDowns = [];
-	window.onkeyup = function(e) {
-		that.keyCodes[e.code] = false;
-		that.keyWhichs[e.which] = false;
-		that.keyUps[that.keyUps.length] = e;
-	}
-	window.onkeydown = function(e) {
-		that.keyCodes[e.code] = true;
-		that.keyWhichs[e.which] = true;
-		that.keyDowns[that.keyDowns.length] = e;
-	}
+	window.onkeyup = (function(e) {
+		this.keyCodes[e.code] = false;
+		this.keyWhichs[e.which] = false;
+		this.keyUps[this.keyUps.length] = e;
+	}).bind(this);
+	window.onkeydown = (function(e) {
+		this.keyCodes[e.code] = true;
+		this.keyWhichs[e.which] = true;
+		this.keyDowns[this.keyDowns.length] = e;
+	}).bind(this);
 	
 	// setup font loading
 	this.flappyFontLoaded = false;
@@ -218,19 +214,19 @@ function Game() {
 	
 	// if the page is hidden, pause the game
 	// if the page is hidden, unpause the game, unless it is in the STATE_PAUSED state
-	function handleVisibilityChange() {
+	var handleVisibilityChange = (function() {
 		if (document[hidden]) {
 			console.log("Page hidden: paused.");
-			that.pause();
-			if (that.state === STATE_PLAYING)
-				that.state = STATE_PAUSED;
+			this.pause();
+			if (this.state === STATE_PLAYING)
+				this.state = STATE_PAUSED;
 		} else {
-			if (that.state !== STATE_PAUSED) {
+			if (this.state !== STATE_PAUSED) {
 				console.log("Page unhidden: resumed.");
-				that.unpause();
+				this.unpause();
 			}
 		}
-	}
+	}).bind(this);
 
 	// Warn if the browser doesn't support addEventListener or the Page Visibility API
 	if (typeof document.addEventListener === "undefined" || typeof document[hidden] === "undefined") {
@@ -306,10 +302,6 @@ Object.defineProperty(Game.prototype, 'flappyCurrent', {
 		else
 			return this.imgs.flappy[Math.floor(this.flappyi)];
 	},
-});
-
-Object.defineProperty(Game.prototype, 'flapButtonDown', {
-	get: function() { return (this.lmbDown && !this.lmbHandled) || this.keyWhichs[WHICH_CODE_SPACE]; },
 });
 
 Object.defineProperty(Game.prototype, 'stateChangeDt', {
@@ -560,6 +552,9 @@ Game.prototype.processKeys = function() {
 		var key = e.key; // key is 'w', 'W', '!', etc.
 		var code = e.code; // code is 'Escape', 'KeyW', 'Digit1', etc.
 		
+		if (e.which === WHICH_CODE_SPACE) {
+			this.flap();
+		}
 		if (code === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING || this.state === STATE_PAUSED)) {
 			this.togglePause();
 		}
@@ -617,25 +612,50 @@ Game.prototype.togglePause = function() {
 	}
 }
 
-Game.prototype.update = function() {
-	// check buttons
-	if (this.lmbDown) {
-		if (!this.lmbDownPrev) {
-			this.lmbHandled = false;
-			var bs = this.buttons;
-			for (var i = 0; i < bs.length; i++) {
-				var btn = bs[i];
-				if (btn.handleClick(this.mouseX, this.mouseY)) {
-					this.lmbHandled = true;
-					break;
-				}
-			}
-			this.lmbDownPrev = true;
-		}
-	} else {
-		this.lmbDownPrev = false;
+Game.prototype.press = function(x, y) {
+	var bs = this.buttons;
+	for (var i = 0; i < bs.length; i++) {
+		bs[i].handleClick(x, y);
 	}
+}
+
+Game.prototype.onmousedown = function(e) {
+	e.preventDefault();
 	
+	console.log("mouse pressed @ " + e.offsetX + ", " + e.offsetY);
+	this.flap();
+	this.press(e.offsetX, e.offsetY);
+}
+
+Game.prototype.onmouseup = function(e) {
+	
+}
+
+Game.prototype.ontouchstart = function(e) {
+	e.preventDefault();
+	
+	this.flap();
+	var touches = e.changedTouches;
+	for (var i = 0; i < touches.length; i++) {
+		var t = touches[i];
+		console.log("touch @ " + t.clientX + ", " + t.clientY);
+		this.press(t.clientX, t.clientY);
+	}
+}
+
+Game.prototype.ontouchend = function(e) {
+	
+}
+
+Game.prototype.ontouchcancel = function(e) {
+	
+}
+
+Game.prototype.ontouchmove = function(e) {
+	
+}
+
+Game.prototype.update = function() {
 	if (this.paused)
 		return;
 	
@@ -646,11 +666,6 @@ Game.prototype.update = function() {
 	}
 	var dt = (now - this.prevTime) / 1000.0;
 	this.prevTime = now;
-	
-	// check if time to start
-	if (this.state === STATE_START && this.flapButtonDown) {
-		this.state = STATE_PLAYING;
-	}
 	
 	// update flappy frame #
 	if (this.state === STATE_START || this.state === STATE_PLAYING)
@@ -675,6 +690,14 @@ Game.prototype.update = function() {
 			}
 		}
 	}
+}
+
+Game.prototype.flap = function() {
+	if (this.state === STATE_START || this.state === STATE_PLAYING)
+		this.bird.velY = MAX_VEL_Y;
+	
+	if (this.state === STATE_START)
+		this.state = STATE_PLAYING;
 }
 
 Game.prototype.updateFlappy = function(dt) {
@@ -716,16 +739,6 @@ Game.prototype.updateFlappy = function(dt) {
 	bird.prevAng = bird.ang;
 	
 	if (this.state === STATE_START || this.state === STATE_PLAYING) {
-		// bird flap logic
-		if (this.flapButtonDown) {
-			if (!bird.flapButtonDownPrev) {
-				bird.velY = MAX_VEL_Y;
-			}
-			bird.flapButtonDownPrev = true;
-		} else {
-			bird.flapButtonDownPrev = false;
-		}
-	
 		// check for collisions with pipes. if a collision is found, kill the bird
 		var bb = bird.getBB(this.flappyCurrent.width, this.flappyCurrent.height);
 		for (var i = 0; i < this.pipes.length; i++) {
