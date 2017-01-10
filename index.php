@@ -7,6 +7,9 @@
 		
 		<link rel="stylesheet" href="css/game.css">
 		
+		<!-- Resizes viewport to look good on mobile -->
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		
 		<!-- Icon stuff. Generated using http://realfavicongenerator.net -->
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 		<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
