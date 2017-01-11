@@ -948,7 +948,7 @@ Game.prototype.drawLeaderboard = function(c) {
 				this.usernameEntry.style.width = space + "px";
 				this.usernameEntry.style.left = (x - spacing - space) + "px";
 				this.usernameEntry.style.right = (x - spacing) + "px";
-				this.usernameEntry.style.top = getLeaderboardY() + getLeaderboardEntrySpacing() * (this.leaderboardPos + 1) + "px";
+				this.usernameEntry.style.top = (y - 4) + "px";
 			}
 		} else {
 			drawFlappyText(c, e.name, x - spacing, y, col, outline, space, false);
