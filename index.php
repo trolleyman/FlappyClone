@@ -40,6 +40,7 @@
 		
 		<div id="game-container">
 			<div id="stats-container" style="visibility: hidden;"><div id="stats"></div></div>
+			<input id="username-entry" style="visibility: hidden;" type="text"/>
 			<canvas id="canvas" width="500" height="800"></canvas>
 		</div>
 	</body>

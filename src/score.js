@@ -27,18 +27,26 @@ function getBestScore() {
 
 // NB: If updating these functions, ensure that the PHP AWS functions are also updated (in priv/name.php)!
 function isLegalName(name) {
+	var legal = true;
+	var reason = "";
 	if (typeof name !== "string") {
-		return false;
+		legal = false;
+		reason = "Please enter a username.";
 	} else if (name === "") {
-		return false;
+		legal = false;
+		reason = "Please enter a username.";
 	} else if (name.length > MAX_NAME_LENGTH) {
-		return false;
+		legal = false;
+		reason = "The username entered is too long.";
 	} else {
 		for (var i = 0; i < name.length; i++)
-			if (!isLegalNameChar(name[i]))
-				return false;
+			if (!isLegalNameChar(name[i])) {
+				legal = false;
+				reason = "The username contains the illegal character '" + name[i] + "'."
+				break;
+			}
 	}
-	return true;
+	return {legal: legal, reason: reason};
 }
 
 // NB: If updating these functions, ensure that the PHP AWS functions are also updated (in priv/name.php)!

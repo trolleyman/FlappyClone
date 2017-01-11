@@ -38,6 +38,9 @@ function Game() {
 	// init canvas
 	this.canvas = document.getElementById("canvas");
 	
+	// init username entry
+	this.usernameEntry = document.getElementById("username-entry");
+	
 	// init mouse
 	this.canvas.onmousedown = this.onmousedown.bind(this);
 	this.canvas.onmouseup = this.onmouseup.bind(this);
@@ -147,9 +150,11 @@ function Game() {
 		setState.bind(this, STATE_START));
 	
 	var submitFunction = (function() {
-		var name = this.text;
-		if (!isLegalName(name)) {
-			console.log("'" + name + "' is not a valid name.");
+		var name = this.usernameEntry.value;
+		var ret = isLegalName(name);
+		if (!ret.legal) {
+			console.error("'" + name + "' is invalid: " + ret.reason);
+			alert(ret.reason);
 			return;
 		}
 		console.log("Submitting best score for '" + name + "': " + this.bestScore);
@@ -174,7 +179,7 @@ function Game() {
 	var disableFunction = (function() {
 		if (!this.newBestScore
 			|| this.leaderboardLoading
-			|| !isLegalName(this.text)
+			|| !isLegalName(this.usernameEntry.value).legal
 			|| this.submitting || this.submitted)
 			return true;
 		return false;
@@ -472,87 +477,28 @@ Game.prototype.mainLoop = function() {
 };
 
 Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
-	this.text = "";
-	this.textEntry = true;
-	this.textPos = 0;
+	this.usernameEntry.value = "";
 	if (typeof maxLength === "undefined")
 		maxLength = 32;
-	this.textMaxLength = maxLength;
 	if (typeof isLegalChar === "undefined")
 		isLegalChar = function(c) { return true; };
-	this.textIsLegalChar = isLegalChar;
-}
-
-Game.prototype.backspaceText = function() {
-	if (this.text.length > 0 && this.textPos > 0) {
-		var begin = this.text.substring(0, this.textPos - 1);
-		var end = this.text.substring(this.textPos, this.text.length);
-		this.text = begin + end;
-		this.moveCursorText(-1);
-	}
-}
-
-Game.prototype.deleteText = function() {
-	if (this.text.length > 0 && this.textPos < this.text.length) {
-		this.textPos += 1;
-		this.backspaceText();
-	}
-}
-
-Game.prototype.moveCursorText = function(n) {
-	this.textPos += n;
-	if (this.textPos < 0)
-		this.textPos = 0;
-	else if (this.textPos >= this.text.length)
-		this.textPos = this.text.length;
-	this.printText();
-}
-
-Game.prototype.printText = function() {
-	var begin = this.text.substring(0, this.textPos);
-	var end = this.text.substring(this.textPos, this.text.length);
-	console.log("Text: " + begin + "|" + end);
-}
-
-Game.prototype.enterText = function(enteredText) {
-	var validText = '';
-	for (var i = 0; i < enteredText.length; i++) {
-		var c = enteredText[i];
-		if (this.textIsLegalChar(c))
-			validText += c;
-	}
-
-	var lengthAllowed = this.textMaxLength - this.text.length;
-	if (lengthAllowed <= 0) {
-		// no extra text allowed!
-		console.log("Prevented from entering text (" + validText + "): max length (" + this.textMaxLength + ") reached.");
-		return;
-	} else if (validText.length > lengthAllowed) {
-		// cut extra text down to size
-		validText = validText.substring(0, lengthAllowed);
-	}
-	var begin = this.text.substring(0, this.textPos);
-	var end = this.text.substring(this.textPos, this.text.length);
-	this.text = begin + validText + end;
-	this.moveCursorText(validText.length);
-}
-
-Game.prototype.getTextEntered = function() {
-	return this.text;
+	
+	this.usernameEntry.maxLength = maxLength;
+	this.usernameEntry.style.visibility = "visible";
 }
 
 Game.prototype.endTextEntryMode = function() {
-	this.textEntry = false;
-	return this.text;
+	this.usernameEntry.style.visibility = "hidden";
 }
 
 Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
 		var e = this.keyDowns[i];
+		var which = e.which;
 		var key = e.key; // key is 'w', 'W', '!', etc.
 		var code = e.code; // code is 'Escape', 'KeyW', 'Digit1', etc.
 		
-		if (e.which === WHICH_CODE_SPACE) {
+		if (which === WHICH_CODE_SPACE) {
 			this.flap();
 		}
 		if (code === "Escape" && (this.debugAllowed || this.state === STATE_PLAYING || this.state === STATE_PAUSED)) {
@@ -565,21 +511,7 @@ Game.prototype.processKeys = function() {
 			this.cameraUpdate = !this.cameraUpdate;
 		}
 		
-		console.log("Key pressed: " + e.which + " '" + key + "' (" + code + ")");
-		
-		if (this.textEntry) {
-			if (key.length === 1) {
-				this.enterText(key);
-			} else if (key === "Backspace") {
-				this.backspaceText();
-			} else if (key === "Delete") {
-				this.deleteText();
-			} else if (key === "ArrowLeft") {
-				this.moveCursorText(-1);
-			} else if (key === "ArrowRight") {
-				this.moveCursorText(1);
-			}
-		}
+		console.log("Key pressed: " + which + " '" + key + "' (" + code + ")");
 	}
 }
 
@@ -998,16 +930,8 @@ Game.prototype.drawLeaderboard = function(c) {
 		
 		y += getLeaderboardEntrySpacing();
 		c.textAlign = "right";
-		if (this.textEntry && e.user) {
-			var start = this.text.substring(0, this.textPos);
-			var end = this.text.substring(this.textPos, this.text.length);
-			var chr = "|";
-			if (hide)
-				chr = "\u2008";
-			
-			var txt = start + chr + end;
-			drawFlappyText(c, txt, x - spacing, y, col, 3);
-		} else if (this.submitting && e.user) {
+		var space = x - 2*spacing - numX;
+		if (this.submitting && e.user) {
 			var now = Date.now().valueOf() / 1000.0;
 			var dt = now - this.submittingStartTime;
 			var dots = Math.floor(((2 * dt) % 3) + 1);
@@ -1016,8 +940,15 @@ Game.prototype.drawLeaderboard = function(c) {
 			drawFlappyText(c, text, x - spacing, y, col, outline);
 		} else if (this.errorSubmitting && e.user) {
 			drawFlappyText(c, "ERROR", x - spacing, y, col, outline);
+		} else if (e.user && !this.submitted) {
+			if (this.usernameEntry.style.visibility === "visible") {
+				this.usernameEntry.style.fontSize = getLeaderboardFontSize() + "px";
+				this.usernameEntry.style.width = space + "px";
+				this.usernameEntry.style.left = (x - spacing - space) + "px";
+				this.usernameEntry.style.right = (x - spacing) + "px";
+				this.usernameEntry.style.top = getLeaderboardY() + getLeaderboardEntrySpacing() * (this.leaderboardPos + 1) + "px";
+			}
 		} else {
-			var space = x - 2*spacing - numX;
 			drawFlappyText(c, e.name, x - spacing, y, col, outline, space, false);
 		}
 		drawFlappyText(c, (i + 1) + ".", numX, y, col, outline);

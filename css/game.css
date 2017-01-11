@@ -26,3 +26,16 @@ html, body {
 	font-family: FlappyFont;
 	src: url(../font/flappy.ttf);
 }
+#username-entry {
+	position: absolute;
+	z-index: 2;
+	margin: 0px;
+	font-family: FlappyFont;
+	font-size: 30px;
+	text-align: right;
+	/*border: 1px black;*/
+	background: transparent;
+}
+#username-entry:focus {
+	/*border: 2px black;*/
+}
