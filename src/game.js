@@ -484,6 +484,15 @@ Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
 	if (typeof isLegalChar === "undefined")
 		isLegalChar = function(c) { return true; };
 	
+	this.usernameEntry.onkeypress = (function(e) {
+		var s = String.fromCharCode(e.charCode);
+		for (var i = 0; i < s.length; i++)
+			if (!isLegalChar(s[i])) {
+				e.preventDefault();
+				break;
+			}
+	}).bind(this);
+	
 	this.usernameEntry.maxLength = maxLength;
 	this.usernameEntry.style.visibility = "visible";
 	this.usernameEntry.focus();
