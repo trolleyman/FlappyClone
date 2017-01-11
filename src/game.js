@@ -1,12 +1,5 @@
 "use strict";
 
-const MIN_CANVAS_WIDTH = 300;
-const MAX_CANVAS_WIDTH = 1440;
-const MIN_CANVAS_HEIGHT = 600;
-const MAX_CANVAS_HEIGHT = 850;
-const MAX_LEADERBOARD_WIDTH = 700;
-
-const BIRD_OFFSET_Y = 100;
 const PIPE_SPACING_X = 250;
 
 const MAX_VEL_Y = 400;
@@ -72,20 +65,23 @@ function Game() {
 		this.keyDowns[this.keyDowns.length] = e;
 	}).bind(this);
 	
-	// setup font loading
 	this.flappyFontLoaded = false;
-	FontFaceOnload("FlappyFont", {
-		success: (function() {
-			console.log("FlappyFont loaded.");
-			this.flappyFontLoaded = true;
-			this.notifyLoadedFont();
-		}).bind(this),
-		error: (function() {
-			console.log("FlappyFont could not be downloaded.");
-			this.flappyFontLoaded = true;
-			this.notifyLoadedFont();
-		}).bind(this),
-	});
+	var loadFlappyFont = (function() {
+		// setup font loading
+		var ffoptions = {
+			success: (function() {
+				console.log("FlappyFont loaded.");
+				this.flappyFontLoaded = true;
+				this.notifyLoadedFont();
+			}).bind(this),
+			error: (function() {
+				console.log("FlappyFont could not be downloaded.");
+				this.flappyFontLoaded = true;
+				this.notifyLoadedFont();
+			}).bind(this),
+		};
+		FontFaceOnload("FlappyFont", ffoptions);
+	}).bind(this);
 	
 	// load images
 	this.imgs = {};
@@ -96,8 +92,11 @@ function Game() {
 		if (typeof this.flappysLoadedNum === "undefined")
 			this.flappysLoadedNum = 0;
 		this.flappysLoadedNum += 1;
-		if (this.flappysLoadedNum === 4)
+		if (this.flappysLoadedNum === 4) {
 			this.flappysLoaded = true;
+			// set off font loading
+			loadFlappyFont();
+		}
 	}).bind(this);
 	for (var i = 0; i < 4; i++) {
 		this.imgs.flappy[i] = this.loadImage("img/flappy" + i + ".png", loadFlappyFunc);
@@ -124,9 +123,10 @@ function Game() {
 	var setState = Object.getOwnPropertyDescriptor(Game.prototype, 'state').set;
 	var spacing = 20;
 	var px = 50, py = 50;
-	this.buttonPlay  = new Button(px, py, this.imgs.buttonPlay , setState.bind(this, STATE_PLAYING));
-	this.buttonPause = new Button(px, py, this.imgs.buttonPause, setState.bind(this, STATE_PAUSED));
-	var dy = 400;
+	var f = getPauseButtonOffset;
+	this.buttonPlay  = new Button(f, f, this.imgs.buttonPlay , setState.bind(this, STATE_PLAYING));
+	this.buttonPause = new Button(f, f, this.imgs.buttonPause, setState.bind(this, STATE_PAUSED));
+	var dy = getGameOverButtonsY;
 	var getX = (function() {
 		var w = spacing + this.imgs.buttonRestart.width + this.imgs.buttonLeaderboard.width;
 		var x = this.canvas.width/2 - w/2;
@@ -140,7 +140,7 @@ function Game() {
 		(function() { return getX() + spacing + this.imgs.buttonRestart.width; }).bind(this), dy,
 		this.imgs.buttonLeaderboard,
 		setState.bind(this, STATE_LEADERBOARD));
-	dy = 670;
+	dy = getLeaderboardButtonsY;
 	this.buttonRestartLeaderboard = new Button(
 		(function() { return this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2; }).bind(this), dy,
 		this.imgs.buttonRestart,
@@ -871,22 +871,22 @@ Game.prototype.drawPlayingUI = function(c) {
 	c.textAlign = "left";
 	c.textBaseline = "top";
 	c.font = "30px FlappyFont";
-	drawFlappyText(c, this.score, 100, 50, "white", 2);
+	drawFlappyText(c, this.score, getScoreOffsetX(), getScoreOffsetY(), "white", 2);
 }
 
 Game.prototype.drawStartUI = function(c) {
+	drawImage(c, this.imgs.tapInfo,
+		getTapInfoOffsetX() + this.bird.posX - this.cameraX,
+		//200 + this.canvas.width / 20.0 - this.imgs.tapInfo.width/2,
+		(c.canvas.height - getBirdStartY()) - this.imgs.tapInfo.height/2);
+	
 	c.textAlign = "center";
 	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var x = Math.floor(c.canvas.width / 2);
 	var col = "gold";//"#30e830";
-	drawFlappyText(c, "Flappy", x, 150, col);
-	drawFlappyText(c, "Clone", x, 150+60+20, col);
-	
-	drawImage(c, this.imgs.tapInfo,
-		120 + this.bird.posX - this.cameraX,
-		//200 + this.canvas.width / 20.0 - this.imgs.tapInfo.width/2,
-		(c.canvas.height - BIRD_START_Y) - this.imgs.tapInfo.height/2);
+	drawFlappyText(c, "Flappy", x, getTitleStartY(), col);
+	drawFlappyText(c, "Clone", x, getTitleStartY()+60+20, col);
 }
 
 Game.prototype.drawDeathUI = function(c) {
@@ -894,14 +894,19 @@ Game.prototype.drawDeathUI = function(c) {
 	c.textBaseline = "top";
 	c.font = "60px FlappyFont";
 	var titleCol = "gold";
-	drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), 200, titleCol);
+	if (!isGameOverMultiline()) {
+		drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), getGameOverY(), titleCol);
+	} else {
+		drawFlappyText(c, "Game", Math.floor(c.canvas.width / 2), getGameOverY(), titleCol);
+		drawFlappyText(c, "Over", Math.floor(c.canvas.width / 2), getGameOverY2(), titleCol);
+	}
 	
 	c.font = "30px FlappyFont";
 	var diff = 70;
 	var l = Math.floor(c.canvas.width/2 - diff);
 	var r = Math.floor(c.canvas.width/2 + diff);
-	var t = 290;
-	var b = 340;
+	var t = getGameOverTop();
+	var b = getGameOverBottom();
 	var outline = 3;
 	drawFlappyText(c, "Score", l, t, "white", outline);
 	drawFlappyText(c, "Best" , r, t, "white", outline);
@@ -916,7 +921,7 @@ Game.prototype.drawLeaderboardUI = function(c) {
 	this.drawLeaderboardHeader(c);
 	if (this.leaderboardLoading) {
 		var x = c.canvas.width/2;
-		var y = 380;
+		var y = c.canvas.height/2;
 		this.drawLoadingAnimation(c, this.stateChangeDt, x, y, true);
 	} else {
 		this.drawLeaderboard(c);
@@ -949,26 +954,26 @@ Game.prototype.drawLeaderboardErrorUI = function(c) {
 Game.prototype.drawLeaderboardHeader = function(c) {
 	c.textAlign = "center";
 	c.textBaseline = "top";
-	c.font = "60px FlappyFont";
+	c.font = getLeaderboardHeaderFontSize() + "px FlappyFont";
 	var titleCol = "gold";
-	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), 110, titleCol);
+	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), getLeaderboardHeaderY(), titleCol, getLeaderboardHeaderFontOutline());
 }
 
 Game.prototype.drawLeaderboard = function(c) {
 	c.textBaseline = "top";
-	c.font = "30px FlappyFont";
+	c.font = getLeaderboardFontSize() + "px FlappyFont";
 	
 	var totalW = Math.min(c.canvas.width, MAX_LEADERBOARD_WIDTH);
 	
 	var left = c.canvas.width/2 - totalW/2;
 	var right = c.canvas.width - left;
-	var outline = 3;
+	var outline = getLeaderboardFontOutline();
 	var scoreW = c.measureText("SCORE").width;
 	
-	var numX = left + 60;
+	var numX = left + getLeaderboardLeftOffset();
 	var spacing = 8;
-	var x = right - 140;
-	var y = 200;
+	var x = right - getLeaderboardRightOffset();
+	var y = getLeaderboardY();
 	var titleCol = "gold";
 
 	c.textAlign = "right";
@@ -991,7 +996,7 @@ Game.prototype.drawLeaderboard = function(c) {
 			col = "gold";
 		}
 		
-		y += 40;
+		y += getLeaderboardEntrySpacing();
 		c.textAlign = "right";
 		if (this.textEntry && e.user) {
 			var start = this.text.substring(0, this.textPos);
@@ -1008,16 +1013,16 @@ Game.prototype.drawLeaderboard = function(c) {
 			var dots = Math.floor(((2 * dt) % 3) + 1);
 			var text = ".".repeat(dots);
 			
-			drawFlappyText(c, text, x - spacing, y, col, 3);
+			drawFlappyText(c, text, x - spacing, y, col, outline);
 		} else if (this.errorSubmitting && e.user) {
-			drawFlappyText(c, "ERROR", x - spacing, y, col, 3);
+			drawFlappyText(c, "ERROR", x - spacing, y, col, outline);
 		} else {
 			var space = x - 2*spacing - numX;
-			drawFlappyText(c, e.name, x - spacing, y, col, 3, space, false);
+			drawFlappyText(c, e.name, x - spacing, y, col, outline, space, false);
 		}
-		drawFlappyText(c, (i + 1) + ".", numX, y, col, 3);
+		drawFlappyText(c, (i + 1) + ".", numX, y, col, outline);
 		c.textAlign = "center";
-		drawFlappyText(c, e.score, scoreX, y, col, 3);
+		drawFlappyText(c, e.score, scoreX, y, col, outline);
 	}
 }
 
@@ -1035,7 +1040,7 @@ Game.prototype.drawLoadingAnimation = function(c, dt, x, y, drawText) {
 		c.font = "30px FlappyFont";
 		drawFlappyText(c, text, x, y + 8, "white", 2);
 	}
-
+	
 	var radius = -35;
 	var offsetX = -img.width/2;
 	var offsetY = -img.height/2;

@@ -4,10 +4,10 @@ function Pipe(x, y, spacing) {
 }
 
 Pipe.prototype.reuse = function(x, y, spacing) {
-	if (typeof y === "undefined")
-		y = Math.random() * 300 + 200;
 	if (typeof spacing === "undefined")
-		spacing = 150;
+		spacing = getPipeSpacing();
+	if (typeof y === "undefined")
+		y = getPipeY();
 	
 	this.x = x;
 	this.y = y;

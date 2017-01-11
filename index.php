@@ -25,6 +25,7 @@
 <?php if (!isDebug()) { ?>
 		<script src="js/game.js"></script>
 <?php } else { ?>
+		<script src="src/sizing.js"></script>
 		<script src="src/fontfaceonload.js"></script>
 		<script src="src/intersection.js"></script>
 		<script src="src/cookie.js"></script>

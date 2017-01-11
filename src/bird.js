@@ -1,13 +1,11 @@
 
-const BIRD_START_Y = 350;
-
 function calculateAngle(x, y) {
 	return Math.atan(-y / x);
 }
 
 function Bird() {
 	this.posX = 0;
-	this.posY = BIRD_START_Y;
+	this.posY = getBirdStartY();
 	
 	this.velX = 150;
 	this.velY = 20;
