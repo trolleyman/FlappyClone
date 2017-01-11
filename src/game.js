@@ -321,6 +321,7 @@ Object.defineProperty(Game.prototype, 'state', {
 		this.stateChangeTime = Date.now().valueOf();
 		var prevState = this.state_;
 		this.state_ = s;
+		this.endTextEntryMode();
 		if (s === STATE_LOADING) {
 			this.buttons = [];
 			this.bird = new Bird();
@@ -485,6 +486,7 @@ Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
 	
 	this.usernameEntry.maxLength = maxLength;
 	this.usernameEntry.style.visibility = "visible";
+	this.usernameEntry.focus();
 }
 
 Game.prototype.endTextEntryMode = function() {
