@@ -3,11 +3,12 @@ from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadReque
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.db.models import Q
+from django.contrib.auth.models import User
 
 from .. import models
 
 def leaderboard(request):
-    json = '[' + ','.join(x.toLeaderboardEntryJSON() for x in models.UserInfo.objects.filter(~Q(score=-1)).order_by('-score')[:10]) + ']'
+    json = '[' + ','.join(x.toLeaderboardEntryJSON() for x in models.UserProfile.objects.filter(~Q(score=-1)).order_by('-score')[:10]) + ']'
     return HttpResponse(json, content_type='application/json')
 
 '''
@@ -24,4 +25,4 @@ def userinfo(request):
     except ObjectDoesNotExist:
         return HttpResponseNotFound('{"error":"User not found."}', content_type='application/json')
     
-    return HttpResponse('{"user":}', content_type='application/json')
+    return HttpResponse(user.userinfo.toJSON(), content_type='application/json')

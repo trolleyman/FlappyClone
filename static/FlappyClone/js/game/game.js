@@ -38,9 +38,6 @@ function Game() {
 	// init canvas
 	this.canvas = document.getElementById("canvas");
 	
-	// init username entry
-	this.usernameEntry = document.getElementById("username-entry");
-	
 	// init mouse
 	this.canvas.onmousedown = this.onmousedown.bind(this);
 	this.canvas.onmouseup = this.onmouseup.bind(this);
@@ -119,8 +116,6 @@ function Game() {
 	this.imgs.buttonPause = this.loadImage("buttonPause.png");
 	this.imgs.buttonRestart = this.loadImage("buttonRestart.png");
 	this.imgs.buttonLeaderboard = this.loadImage("buttonLeaderboard.png");
-	this.imgs.buttonSubmit = this.loadImage("buttonSubmit.png");
-	this.imgs.buttonSubmitDisabled = this.loadImage("buttonSubmitDisabled.png");
 	this.imgs.buttonRetry = this.loadImage("buttonRetry.png");
 	
 	// Setup buttons
@@ -149,39 +144,6 @@ function Game() {
 		(function() { return this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2; }).bind(this), dy,
 		this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
-	
-	var submitFunction = (function() {
-		var name = this.usernameEntry.value;
-		console.log("Submitting best score for '" + name + "': " + this.bestScore);
-		this.submitting = true;
-		this.submittingStartTime = Date.now().valueOf() / 1000.0;
-		this.errorSubmitting = false;
-		this.submitted = false;
-		this.endTextEntryMode();
-		this.leaderboard[this.leaderboardPos].name = name;
-		submitBestScore(name, this.bestScore, (function() {
-			console.log("Submitted score.");
-			this.submitting = false;
-			this.submitted = true;
-		}).bind(this), (function(error) {
-			this.submitting = false;
-			this.submitted = false;
-			console.log("error submitting score: " + error);
-			this.errorSubmitting = true;
-		}).bind(this));
-	}).bind(this);
-	
-	var disableFunction = (function() {
-		if (!this.newBestScore
-			|| this.leaderboardLoading
-			|| this.submitting || this.submitted)
-			return true;
-		return false;
-	}).bind(this);
-	
-	this.buttonSubmit = new DisableButton(
-		(function() { return this.canvas.width/2 + spacing/2; }).bind(this), dy,
-		this.imgs.buttonSubmit, this.imgs.buttonSubmitDisabled, submitFunction, disableFunction);
 	
 	dy = 400;
 	this.buttonRestartLeaderboardError = new Button(
@@ -245,9 +207,6 @@ function Game() {
 	this.flappyDt = 0.08; // seconds per flappy frame
 	this.paused = false;
 	this.cameraX = 0;
-
-	this.beginTextEntryMode();
-	this.endTextEntryMode();
 	
 	// Setup state
 	this.state = STATE_LOADING;
@@ -315,7 +274,6 @@ Object.defineProperty(Game.prototype, 'state', {
 		this.stateChangeTime = Date.now().valueOf();
 		var prevState = this.state_;
 		this.state_ = s;
-		this.endTextEntryMode();
 		if (s === STATE_LOADING) {
 			this.buttons = [];
 			this.bird = new Bird();
@@ -398,7 +356,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.bird.velX = 0;
 			
 		} else if (s === STATE_LEADERBOARD) {
-			this.buttons = [this.buttonRestartLeaderboard, this.buttonSubmit];
+			this.buttons = [this.buttonRestartLeaderboard];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
@@ -469,31 +427,6 @@ Game.prototype.mainLoop = function() {
 	this.keyUps = [];
 	this.keyDowns = [];
 };
-
-Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
-	this.usernameEntry.value = "";
-	if (typeof maxLength === "undefined")
-		maxLength = 32;
-	if (typeof isLegalChar === "undefined")
-		isLegalChar = function(c) { return true; };
-	
-	this.usernameEntry.onkeypress = (function(e) {
-		var s = String.fromCharCode(e.charCode);
-		for (var i = 0; i < s.length; i++)
-			if (!isLegalChar(s[i])) {
-				e.preventDefault();
-				break;
-			}
-	}).bind(this);
-	
-	this.usernameEntry.maxLength = maxLength;
-	this.usernameEntry.style.visibility = "visible";
-	this.usernameEntry.focus();
-}
-
-Game.prototype.endTextEntryMode = function() {
-	this.usernameEntry.style.visibility = "hidden";
-}
 
 Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
