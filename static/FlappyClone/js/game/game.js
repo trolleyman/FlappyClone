@@ -227,6 +227,21 @@ Game.prototype.updateUserProfile = function() {
 	}.bind(this));
 }
 
+Game.prototype.updateLeaderboard = function() {
+	var successFunction = (function(leaderboard) {
+		this.leaderboard = leaderboard;
+		this.leaderboardLoading = false;
+		console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
+		console.log("Leaderboard: " + JSON.stringify(leaderboard));
+	}).bind(this);
+	var errorFunction = (function(err) {
+		console.log("Error loading leaderboard: " + err);
+		this.state = STATE_LEADERBOARD_ERROR;
+	}).bind(this);
+	
+	getLeaderboard(successFunction, errorFunction);
+}
+
 Game.prototype.loadImage = function(name, f) {
 	if (typeof f === "undefined")
 		f = function() {};
@@ -384,35 +399,8 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
+			this.updateLeaderboard();
 			
-			var successFunction = (function(leaderboard) {
-				this.leaderboard = leaderboard;
-				this.leaderboardLoading = false;
-				console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
-				console.log("Leaderboard: " + JSON.stringify(leaderboard));
-				if (this.newBestScore) {
-					// find if the user fits on the leaderboard
-					var pos = -1;
-					for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
-						var e = leaderboard[i];
-						if (typeof e === "undefined" || this.userProfile.score > e.score) {
-							pos = i;
-							break;
-						}
-					}
-					
-					if (pos !== -1) {
-						this.leaderboardPos = pos;
-						leaderboard.splice(pos, 0, {user: true, name: "", score: this.userProfile.score});
-					}
-				}
-			}).bind(this);
-			var errorFunction = (function(err) {
-				console.log("Error loading leaderboard: " + err);
-				this.state = STATE_LEADERBOARD_ERROR;
-			}).bind(this);
-			
-			getLeaderboard(successFunction, errorFunction);
 		} else if (this.state === STATE_LEADERBOARD_ERROR) {
 			this.buttons = [this.buttonRestartLeaderboardError, this.buttonRetry];
 			this.deadFlappyImage = true;
@@ -882,10 +870,8 @@ Game.prototype.drawLeaderboard = function(c) {
 			break;
 		
 		var col = "white";
-		var hide = hide = Math.floor((5 * this.stateChangeDt) % 3) === 0;
-		if (e.user && this.errorSubmitting) {
-			col = "red";
-		} else if (e.user) {
+		// Highlight current user
+		if (e.username === this.userProfile.username) {
 			col = "rgb(190, 255, 0)";
 		}
 		
