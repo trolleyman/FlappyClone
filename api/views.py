@@ -8,13 +8,13 @@ from django.contrib.auth.models import User
 from .. import models
 
 def leaderboard(request):
-    json = '[' + ','.join(x.toLeaderboardEntryJSON() for x in models.UserProfile.objects.filter(~Q(score=-1)).order_by('-score')[:10]) + ']'
+    json = '[' + ','.join(x.toLeaderboardEntryJSON() for x in models.UserProfile.objects.filter(~Q(score=0)).order_by('-score')[:10]) + ']'
     return HttpResponse(json, content_type='application/json')
 
 '''
 Get information about a specific user
 '''
-def userinfo(request):
+def userprofile(request):
     try:
         username = request.GET['username']
     except KeyError:
@@ -25,4 +25,4 @@ def userinfo(request):
     except ObjectDoesNotExist:
         return HttpResponseNotFound('{"error":"User not found."}', content_type='application/json')
     
-    return HttpResponse(user.userinfo.toJSON(), content_type='application/json')
+    return HttpResponse(user.userprofile.toJSON(), content_type='application/json')

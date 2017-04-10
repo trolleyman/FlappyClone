@@ -5,5 +5,5 @@ from . import views
 
 urlpatterns = [
     url(r'^leaderboard$', views.leaderboard, name='leaderboard'),
-    url(r'^userinfo$', views.userinfo, name='userinfo'),
+    url(r'^userprofile$', views.userprofile, name='userprofile'),
 ]
