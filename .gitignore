@@ -1,0 +1,9 @@
+# Paint.NET
+*.pdnBak
+
+# Uglified JS
+js/game.js
+
+# Python
+__pycache__/
+
