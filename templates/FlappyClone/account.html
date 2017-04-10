@@ -10,5 +10,11 @@
 	<div id="title">
 		<span id="title-span">{{ user.get_username }}</span>
 	</div>
-	<div id="score">{{ user.leaderboard_entry.score }}</div>
+	<div id="score">
+		High Score:
+		<span id="score-inner">
+		{% if user.leaderboard_entry.score == -1 %} {{ user.leaderboard_entry.score }}
+		{% else %} N/A {% endif %}
+		</span>
+	</div>
 {% endblock content %}

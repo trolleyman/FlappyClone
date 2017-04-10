@@ -1,5 +1,5 @@
 
-#content span, #content h1, #content h2, #content h3, #content h4 {
+#content * {
 	font-family: FlappyFont;
 	text-align: center;
 	color: gold;
@@ -13,7 +13,16 @@
 }
 
 #score {
-	font-size: 24px;
+	font-size: 40px;
 	width: 100%;
 	height: 24px;
+	color: rgb(190, 255, 0);
+	text-shadow: 1px 1px 0px black, -1px 1px 0px black, 1px -1px 0px black, -1px -1px 0px black;
+}
+
+#score-inner {
+	font-size: 30px;
+	vertical-align: middle;
+	text-shadow: inherit;
+	color: white;
 }

@@ -428,7 +428,6 @@ Object.defineProperty(Game.prototype, 'state', {
 					if (pos !== -1) {
 						this.leaderboardPos = pos;
 						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
-						this.beginTextEntryMode(MAX_NAME_LENGTH, true);
 					}
 				}
 			}).bind(this);
@@ -551,9 +550,8 @@ Game.prototype.togglePause = function() {
 
 Game.prototype.press = function(x, y) {
 	var bs = this.buttons;
-	var headerHeight = document.getElementById("header").clientHeight;
 	for (var i = 0; i < bs.length; i++) {
-		bs[i].handleClick(x, y - headerHeight);
+		bs[i].handleClick(x, y);
 	}
 }
 
@@ -575,9 +573,13 @@ Game.prototype.ontouchstart = function(e) {
 	this.flap();
 	var touches = e.changedTouches;
 	for (var i = 0; i < touches.length; i++) {
+		var rect = this.canvas.getBoundingClientRect();
+		var x = e.targetTouches[0].pageX - rect.left;
+		var y = e.targetTouches[0].pageY - rect.top;
+		
 		var t = touches[i];
-		console.log("touch @ " + t.clientX + ", " + t.clientY);
-		this.press(t.clientX, t.clientY);
+		console.log("touch @ " + x + ", " + y);
+		this.press(x, y);
 	}
 }
 
@@ -957,7 +959,7 @@ Game.prototype.drawLeaderboard = function(c) {
 				this.usernameEntry.style.top = (y - 4) + "px";
 			}
 		} else {
-			drawFlappyText(c, e.name, x - spacing, y, col, outline, space, false);
+			drawFlappyText(c, e.username, x - spacing, y, col, outline, space, false);
 		}
 		drawFlappyText(c, (i + 1) + ".", numX, y, col, outline);
 		c.textAlign = "center";
