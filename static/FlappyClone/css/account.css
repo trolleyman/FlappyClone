@@ -11,3 +11,9 @@
 	width: 80%;
 	margin: 0px 10%;
 }
+
+#score {
+	font-size: 24px;
+	width: 100%;
+	height: 24px;
+}

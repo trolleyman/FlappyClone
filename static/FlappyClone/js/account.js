@@ -1,10 +1,10 @@
-function update() {
-	$('#title > span').bigText({
-		
-	});
+function updateSizing() {
+	$('#title > span').bigText();
 }
 
 $(function(){
-	$(window).resize(update);
-	update();
+	$(window).resize(updateSizing);
+	updateSizing();
 })
+
+$(window).on("load", updateSizing)
