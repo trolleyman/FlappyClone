@@ -20,7 +20,7 @@ window.onload = function(){
 };
 
 function stateToString(state) {
-	     if (state === STATE_LOADING)     return "STATE_LOADING";
+		 if (state === STATE_LOADING)     return "STATE_LOADING";
 	else if (state === STATE_START)       return "STATE_START";
 	else if (state === STATE_PLAYING)     return "STATE_PLAYING";
 	else if (state === STATE_PAUSED)      return "STATE_PAUSED";
@@ -95,34 +95,35 @@ function Game() {
 		if (typeof this.flappysLoadedNum === "undefined")
 			this.flappysLoadedNum = 0;
 		this.flappysLoadedNum += 1;
-		if (this.flappysLoadedNum === 4) {
+		if (this.flappysLoadedNum === this.imgs.flappy.length) {
 			this.flappysLoaded = true;
-			// set off font loading
+			
+			// Trigger font loading
 			loadFlappyFont();
 		}
 	}).bind(this);
 	for (var i = 0; i < 4; i++) {
-		this.imgs.flappy[i] = this.loadImage("img/flappy" + i + ".png", loadFlappyFunc);
+		this.imgs.flappy[i] = this.loadImage("flappy" + i + ".png", loadFlappyFunc);
 	}
 	for (var i = 0; i < 4; i++) {
-		this.imgs.deadFlappy[i] = this.loadImage("img/deadFlappy" + i + ".png");
+		this.imgs.deadFlappy[i] = this.loadImage("deadFlappy" + i + ".png");
 	}
-	this.imgs.bg = this.loadImage("img/background.png");
-	this.imgs.bgBlank = this.loadImage("img/backgroundBlank.png");
-	this.imgs.pipe = this.loadImage("img/pipe.png");
-	this.imgs.pipeHead = this.loadImage("img/pipeHead.png");
-	this.imgs.ground = this.loadImage("img/ground.png");
-	this.imgs.tapInfo = this.loadImage("img/tapInfo.png");
-	this.imgs.new = this.loadImage("img/new.png");
-	this.imgs.buttonPlay = this.loadImage("img/buttonPlay.png");
-	this.imgs.buttonPause = this.loadImage("img/buttonPause.png");
-	this.imgs.buttonRestart = this.loadImage("img/buttonRestart.png");
-	this.imgs.buttonLeaderboard = this.loadImage("img/buttonLeaderboard.png");
-	this.imgs.buttonSubmit = this.loadImage("img/buttonSubmit.png");
-	this.imgs.buttonSubmitDisabled = this.loadImage("img/buttonSubmitDisabled.png");
-	this.imgs.buttonRetry = this.loadImage("img/buttonRetry.png");
+	this.imgs.bg = this.loadImage("background.png");
+	this.imgs.bgBlank = this.loadImage("backgroundBlank.png");
+	this.imgs.pipe = this.loadImage("pipe.png");
+	this.imgs.pipeHead = this.loadImage("pipeHead.png");
+	this.imgs.ground = this.loadImage("ground.png");
+	this.imgs.tapInfo = this.loadImage("tapInfo.png");
+	this.imgs.new = this.loadImage("new.png");
+	this.imgs.buttonPlay = this.loadImage("buttonPlay.png");
+	this.imgs.buttonPause = this.loadImage("buttonPause.png");
+	this.imgs.buttonRestart = this.loadImage("buttonRestart.png");
+	this.imgs.buttonLeaderboard = this.loadImage("buttonLeaderboard.png");
+	this.imgs.buttonSubmit = this.loadImage("buttonSubmit.png");
+	this.imgs.buttonSubmitDisabled = this.loadImage("buttonSubmitDisabled.png");
+	this.imgs.buttonRetry = this.loadImage("buttonRetry.png");
 	
-	// setup buttons
+	// Setup buttons
 	var setState = Object.getOwnPropertyDescriptor(Game.prototype, 'state').set;
 	var spacing = 20;
 	var px = 50, py = 50;
@@ -151,8 +152,8 @@ function Game() {
 	
 	var submitFunction = (function() {
 		var name = this.usernameEntry.value;
-		var ret = isLegalName(name);
-		if (!ret.legal) {
+		var ret = isValidName(name);
+		if (!ret.valid) {
 			console.error("'" + name + "' is invalid: " + ret.reason);
 			alert(ret.reason);
 			return;
@@ -179,7 +180,7 @@ function Game() {
 	var disableFunction = (function() {
 		if (!this.newBestScore
 			|| this.leaderboardLoading
-			|| !isLegalName(this.usernameEntry.value).legal
+			|| !isValidName(this.usernameEntry.value).valid
 			|| this.submitting || this.submitted)
 			return true;
 		return false;
@@ -198,13 +199,13 @@ function Game() {
 		(function() { return this.canvas.width/2 + spacing/2; }).bind(this), dy,
 		this.imgs.buttonRetry, setState.bind(this, STATE_LEADERBOARD));
 
-	// init pipes
+	// Setup pipes
 	this.pipes = [];
 	for (var i = 0; i < 10; i++) {
 		this.pipes[i] = new Pipe(-200);
 	}
 	
-	// setup handling focus events. see https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
+	// Setup handling focus events. see https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
 	var hidden, visibilityChange; 
 	if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
 		hidden = "hidden";
@@ -217,8 +218,8 @@ function Game() {
 		visibilityChange = "webkitvisibilitychange";
 	}
 	
-	// if the page is hidden, pause the game
-	// if the page is hidden, unpause the game, unless it is in the STATE_PAUSED state
+	// If the page is hidden, pause the game
+	// If the page is hidden, unpause the game, unless it is in the STATE_PAUSED state
 	var handleVisibilityChange = (function() {
 		if (document[hidden]) {
 			console.log("Page hidden: paused.");
@@ -232,7 +233,7 @@ function Game() {
 			}
 		}
 	}).bind(this);
-
+	
 	// Warn if the browser doesn't support addEventListener or the Page Visibility API
 	if (typeof document.addEventListener === "undefined" || typeof document[hidden] === "undefined") {
 		console.log("Error: Page Visibility API not supported.");
@@ -241,10 +242,10 @@ function Game() {
 		document.addEventListener(visibilityChange, handleVisibilityChange, false);
 	}
 	
-	// init stats
+	// Setup stats
 	this.stats = document.getElementById("stats");
 	
-	// init vars
+	// Setup vars
 	this.debugAllowed = false; // is debugging allowed?
 	this.debugView = false;
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
@@ -255,11 +256,11 @@ function Game() {
 	this.beginTextEntryMode();
 	this.endTextEntryMode();
 	
-	// init state
+	// Setup state
 	this.state = STATE_LOADING;
 }
 
-Game.prototype.loadImage = function(path, f) {
+Game.prototype.loadImage = function(name, f) {
 	if (typeof f === "undefined")
 		f = function() {};
 	if (typeof this.imagesLoadedMax === "undefined")
@@ -271,7 +272,7 @@ Game.prototype.loadImage = function(path, f) {
 		f();
 		this.notfiyLoadedImage();
 	}).bind(this);
-	img.src = path;
+	img.src = document.head.querySelector("meta[name=static]").getAttribute('value') + 'img/' + name;
 	return img;
 }
 
@@ -434,7 +435,7 @@ Object.defineProperty(Game.prototype, 'state', {
 					if (pos !== -1) {
 						this.leaderboardPos = pos;
 						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
-						this.beginTextEntryMode(MAX_NAME_LENGTH, isLegalNameChar);
+						this.beginTextEntryMode(MAX_NAME_LENGTH, isValidNameChar);
 					}
 				}
 			}).bind(this);
@@ -557,8 +558,9 @@ Game.prototype.togglePause = function() {
 
 Game.prototype.press = function(x, y) {
 	var bs = this.buttons;
+	var headerHeight = document.getElementById("header").clientHeight;
 	for (var i = 0; i < bs.length; i++) {
-		bs[i].handleClick(x, y);
+		bs[i].handleClick(x, y - headerHeight);
 	}
 }
 
@@ -713,20 +715,22 @@ Game.prototype.updateFlappy = function(dt) {
 
 Game.prototype.draw = function() {
 	// resize canvas width
-	if (window.innerWidth < MIN_CANVAS_WIDTH)
-		this.canvas.width = MIN_CANVAS_WIDTH
-	else if (window.innerWidth > MAX_CANVAS_WIDTH)
-		this.canvas.width = MAX_CANVAS_WIDTH
+	var targetWidth = window.innerWidth;
+	if (targetWidth < MIN_CANVAS_WIDTH)
+		this.canvas.width = MIN_CANVAS_WIDTH;
+	else if (targetWidth > MAX_CANVAS_WIDTH)
+		this.canvas.width = MAX_CANVAS_WIDTH;
 	else
-		this.canvas.width = window.innerWidth;
+		this.canvas.width = targetWidth;
 	
 	// resize canvas height
-	if (window.innerHeight < MIN_CANVAS_HEIGHT)
-		this.canvas.height = MIN_CANVAS_HEIGHT
-	else if (window.innerHeight > MAX_CANVAS_HEIGHT)
-		this.canvas.height = MAX_CANVAS_HEIGHT
+	var targetHeight = document.getElementById("game-container").clientHeight;
+	if (targetHeight < MIN_CANVAS_HEIGHT)
+		this.canvas.height = MIN_CANVAS_HEIGHT;
+	else if (targetHeight > MAX_CANVAS_HEIGHT)
+		this.canvas.height = MAX_CANVAS_HEIGHT;
 	else
-		this.canvas.height = window.innerHeight;
+		this.canvas.height = targetHeight;
 
 	// get context
 	var c = this.canvas.getContext("2d");
