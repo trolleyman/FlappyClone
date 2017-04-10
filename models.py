@@ -22,7 +22,6 @@ class UserProfile(models.Model):
     def toJSON(self):
         return dumps({
             'username': self.user.get_username(),
-            'email': self.user.email,
             'score': self.score,
             'date': str(self.date),
         })
