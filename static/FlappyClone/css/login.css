@@ -9,6 +9,12 @@
 	text-align: right;
 }
 
+.help {
+	font-size: 14px;
+	color: black !important;
+	text-shadow: 0px 0px !important;
+}
+
 input[type=submit] {
 	width: 80px;
 	height: 25px;
@@ -42,6 +48,10 @@ input[type=submit] {
 	margin-top: 8px;
 	margin-right: 12px;
 	margin-bottom: 4px;
+}
+
+.errorlist > li {
+	max-width: 250px;
 }
 
 .errorlist > li::before {
@@ -133,4 +143,3 @@ input[type=text], input[type=password] {
 		margin-left: auto;
 		margin-right: auto;
 	}
-}

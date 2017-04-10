@@ -1,9 +1,6 @@
 {% extends "FlappyClone/base.html" %}
 {% load static %}
 {% block head %}
-	<script src="{% static 'FlappyClone/src/common/validation.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/login.js' %}"></script>
-	
 	<link rel="stylesheet" href="{% static 'FlappyClone/css/login.css' %}">
 	<style>
 		#content {
@@ -23,7 +20,7 @@
 				</div>
 				{{ field.errors }}
 			{% endfor %}
-			<div><input type="submit" value="Log in" disabled /></div>
+			<div><input type="submit" value="Log in" /></div>
 		</form>
 	</div>
 	<div id="seperator-container"><div class="seperator"><div></div></div></div>
@@ -37,7 +34,7 @@
 				</div>
 				{{ field.errors }}
 			{% endfor %}
-			<div><input type="submit" value="Sign up" disabled /></div>
+			<div><input type="submit" value="Sign up" /></div>
 		</form>
 	</div>
 </div>
