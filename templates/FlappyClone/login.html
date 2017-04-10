@@ -11,6 +11,7 @@
 {% block content %}
 <div>
 	<div id="login" class="clearfix">
+		<h1>Log in</h1>
 		<form method="post">
 			<input type="hidden" name="action" value="login" />
 			{% csrf_token %}
@@ -25,6 +26,7 @@
 	</div>
 	<div id="seperator-container"><div class="seperator"><div></div></div></div>
 	<div id="signup" class="clearfix">
+		<h1>Sign up</h1>
 		<form method="post">
 			<input type="hidden" name="action" value="signup" />
 			{% csrf_token %}
