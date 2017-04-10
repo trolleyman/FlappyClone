@@ -35,6 +35,16 @@ function copyTouch(t) {
 }
 
 function Game() {
+	// init user profile
+	this.userProfile = {"username":getLoggedInUsername(),"score":0};
+	getUserProfile(getLoggedInUsername(), function(profile) {
+		// Success
+		this.userProfile = profile;
+	}.bind(this), function(error) {
+		// Error
+		console.error("Error loading user profile: " + error);
+	}.bind(this));
+	
 	// init canvas
 	this.canvas = document.getElementById("canvas");
 	
@@ -288,7 +298,6 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.buttons = [];
 			this.deadFlappyImage = false;
 			this.gravity = 0;
-			this.bestScore = getBestScore();
 			this.prevTime = NaN; // clear prevTime
 			this.score = 0;
 			this.paused = false;
@@ -345,12 +354,11 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
-			if (this.score > this.bestScore) {
-				this.bestScore = this.score;
+			if (this.score > this.userProfile.score) {
+				this.userProfile.score = this.score;
 				this.newBestScore = true;
 				this.submitted = false;
 				this.errorSubmitting = false;
-				setBestScore(this.bestScore);
 			}
 			this.bird.velY = 300;
 			this.bird.velX = 0;
@@ -377,7 +385,7 @@ Object.defineProperty(Game.prototype, 'state', {
 					var pos = -1;
 					for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
 						var e = leaderboard[i];
-						if (typeof e === "undefined" || this.bestScore > e.score) {
+						if (typeof e === "undefined" || this.userProfile.score > e.score) {
 							pos = i;
 							break;
 						}
@@ -385,7 +393,7 @@ Object.defineProperty(Game.prototype, 'state', {
 					
 					if (pos !== -1) {
 						this.leaderboardPos = pos;
-						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
+						leaderboard.splice(pos, 0, {user: true, name: "", score: this.userProfile.score});
 					}
 				}
 			}).bind(this);
@@ -785,8 +793,8 @@ Game.prototype.drawDeathUI = function(c) {
 	var outline = 3;
 	drawFlappyText(c, "Score", l, t, "white", outline);
 	drawFlappyText(c, "Best" , r, t, "white", outline);
-	drawFlappyText(c, this.score    , l, b, "white", outline);
-	drawFlappyText(c, this.bestScore, r, b, "white", outline);
+	drawFlappyText(c, this.score            , l, b, "white", outline);
+	drawFlappyText(c, this.userProfile.score, r, b, "white", outline);
 
 	if (this.newBestScore)
 		drawImage(c, this.imgs.new, r + 27, t - 10);
@@ -868,32 +876,13 @@ Game.prototype.drawLeaderboard = function(c) {
 		if (e.user && this.errorSubmitting) {
 			col = "red";
 		} else if (e.user) {
-			col = "gold";
+			col = "rgb(190, 255, 0)";
 		}
 		
 		y += getLeaderboardEntrySpacing();
 		c.textAlign = "right";
 		var space = x - 2*spacing - numX;
-		if (this.submitting && e.user) {
-			var now = Date.now().valueOf() / 1000.0;
-			var dt = now - this.submittingStartTime;
-			var dots = Math.floor(((2 * dt) % 3) + 1);
-			var text = ".".repeat(dots);
-			
-			drawFlappyText(c, text, x - spacing, y, col, outline);
-		} else if (this.errorSubmitting && e.user) {
-			drawFlappyText(c, "ERROR", x - spacing, y, col, outline);
-		} else if (e.user && !this.submitted) {
-			if (this.usernameEntry.style.visibility === "visible") {
-				this.usernameEntry.style.fontSize = getLeaderboardFontSize() + "px";
-				this.usernameEntry.style.width = space + "px";
-				this.usernameEntry.style.left = (x - spacing - space) + "px";
-				this.usernameEntry.style.right = (x - spacing) + "px";
-				this.usernameEntry.style.top = (y - 4) + "px";
-			}
-		} else {
-			drawFlappyText(c, e.username, x - spacing, y, col, outline, space, false);
-		}
+		drawFlappyText(c, e.username, x - spacing, y, col, outline, space, false);
 		drawFlappyText(c, (i + 1) + ".", numX, y, col, outline);
 		c.textAlign = "center";
 		drawFlappyText(c, e.score, scoreX, y, col, outline);

@@ -10,7 +10,7 @@ def dumps(o):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    score = models.IntegerField(default=-1)
+    score = models.IntegerField(default=0)
     date = models.DateTimeField(default=None, null=True)
     
     def toLeaderboardEntryJSON(self):
@@ -27,6 +27,9 @@ class UserProfile(models.Model):
             'date': str(self.date),
         })
 
+'''
+Register UserProfile every time a new user is saved
+'''
 def create_profile(sender, **kwargs):
     user = kwargs["instance"]
     if kwargs["created"]:

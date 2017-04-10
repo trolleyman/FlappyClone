@@ -1,64 +1,56 @@
 const NUM_LEADERBOARD_ENTRIES = 10;
-const BEST_SCORE_COOKIE_NAME = "BEST_SCORE";
 
 const LEADERBOARD_API_PATH = "api/leaderboard";
+const USER_PROFILE_API_PATH = "api/profile";
 const SUBMIT_API_PATH = "api/submit";
 
-function setBestScore(score) {
-	setCookie(BEST_SCORE_COOKIE_NAME, score, 365);
-	console.log("Best score set: " + score);
+// Returns "" if there is no current user logged in
+function getLoggedInUsername() {
+	var username = document.head.querySelector("meta[name=username]").getAttribute('value');
+	return username || "";
 }
 
-function getBestScore() {
-	var bestScore = parseInt(getCookie(BEST_SCORE_COOKIE_NAME));
-	if (isNaN(bestScore)) {
-		bestScore = 0;
-		setBestScore(0);
+// Gets the user profile with specified username. Asynchronous.
+function getUserProfile(username, success, error) {
+	// User not logged in
+	if (username === "") {
+		success({"score":0});
+		return;
 	}
-	return bestScore;
+	
+	$.ajax({
+		url: USER_PROFILE_API_PATH,
+		dataType: "json",
+		success: success,
+		error: error,
+	})
+}
+
+// Submits the score to the currently logged in user. Does nothing if no user is currently logged in
+function submitScore(score, success, error) {
+	var username = getLoggedInUsername();
+	if (username === "")
+		return;
+	
+	$.ajax({
+		url: SUBMIT_API_PATH,
+		dataType: "json",
+		method: "POST",
+		data: {
+			"username": username,
+			"score": score,
+		},
+		success: success,
+		error: error,
+	})
 }
 
 // Takes a callback that is triggered when the leaderboard has been loaded.
-function getLeaderboard(successCallback, errorCallback) {
-	var req = new XMLHttpRequest();
-	req.onreadystatechange = function() {
-		if (this.readyState == 4) {
-			if (this.status === 200) {
-				var text = this.responseText;
-				var leaderboard = null;
-				try {
-					leaderboard = JSON.parse(text);
-				} catch (e) {
-					errorCallback("Invalid JSON response: " + text);
-				}
-				successCallback(leaderboard);
-			} else {
-				errorCallback(this.statusText + ": " + this.responseText);
-			}
-		}
-	};
-	req.open("GET", LEADERBOARD_API_PATH, true);
-	req.send();
-}
-
-// Takes a callback that is triggered when the score has been submitted.
-function submitBestScore(name, score, successCallback, errorCallback) {
-	var req = new XMLHttpRequest();
-	req.onreadystatechange = function() {
-		if (this.readyState == 4) {
-			if (this.status === 200) {
-				successCallback();
-			} else {
-				var e = "" + this.status;
-				if (this.statusText)
-					e += " " + this.statusText;
-				e += ": ";
-				errorCallback(e + this.responseText);
-			}
-		}
-	};
-	var params = "name=" + encodeURIComponent(name) + "&score=" + encodeURIComponent(score);
-	req.open("POST", SUBMIT_API_PATH, true);
-	req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-	req.send(params);
+function getLeaderboard(success, error) {
+	$.ajax({
+		url: LEADERBOARD_API_PATH,
+		dataType: "json",
+		success: success,
+		error: error,
+	})
 }
