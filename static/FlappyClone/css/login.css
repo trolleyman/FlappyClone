@@ -52,6 +52,8 @@ input[type=submit] {
 
 .errorlist > li {
 	max-width: 250px;
+	text-align: right;
+	margin-left: auto;
 }
 
 .errorlist > li::before {

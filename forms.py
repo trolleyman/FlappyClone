@@ -2,6 +2,9 @@ from django import forms
 
 from .api.validation import *
 
+import logging
+import pprint
+
 class LoginForm(forms.Form):
     username = forms.CharField(max_length=USERNAME_MAX_LENGTH, validators=USERNAME_VALIDATORS, help_text=USERNAME_HELP_TEXT)
     password = forms.CharField(max_length=PASSWORD_MAX_LENGTH, widget=forms.PasswordInput(), validators=PASSWORD_VALIDATORS)
@@ -17,9 +20,15 @@ class SignupForm(forms.Form):
         """
         Ensure that confirm fields are equal.
         """
-        cleaned_data = super(ContactForm, self).clean()
-        if cleaned_data['email'] != cleaned_data['email_confirm']:
-            raise ValidationError('Emails are not equal.')
-        if cleaned_data['password'] != cleaned_data['password_confirm']:
-            raise ValidationError('Passwords are not equal.')
+        ## self.cleaned_data = super(SignupForm, self).clean()
+        ## logging.getLogger(__name__).error('self::: ' + pprint.pformat(self.__dict__))
+        email = self.data['email']
+        email_confirm = self.data['email_confirm']
+        password = self.data['password']
+        password_confirm = self.data['password_confirm']
+        
+        if email != email_confirm:
+            self.add_error('email_confirm', 'Emails are not equal.')
+        if password != password_confirm:
+            self.add_error('password_confirm', 'Passwords are not equal.')
         

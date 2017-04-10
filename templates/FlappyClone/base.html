@@ -30,7 +30,11 @@
 	<body>
 		<div id="header">
 			<div id="header-logo"><a href="{% url 'index' %}">FlappyClone</a></div>
-			<div id="header-login"><a href="{% url 'login' %}">Log in / Sign up</a></div>
+			{% if user.is_authenticated %}
+				<div id="header-login"><a href="{% url 'account' %}">{{ user.get_username }}</a></div>
+			{% else %}
+				<div id="header-login"><a href="{% url 'login' %}">Log in / Sign up</a></div>
+			{% endif %}
 		</div>
 		<div id="content">
 		{% block content %}{% endblock content %}
