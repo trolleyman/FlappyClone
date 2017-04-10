@@ -1,23 +1,9 @@
 from django.db import models
+from django.forms import ModelForm
 
-import json
-
-def toJSON(dict):
-    return json.dumps(dict, ensure_ascii=False, separators=(',', ':'))
+from django.contrib.auth.models import User
 
 class LeaderboardEntry(models.Model):
-    name = models.CharField(max_length=127)
-    score = models.IntegerField()
-    date = models.DateTimeField()
-    
-    def toJSON(self):
-        return toJSON({
-            'name' : self.name,
-            'score': self.score,
-            'date' : str(self.date),
-        })
-    
-    def __str__(self):
-        return '{}: {} - {}'.format(self.name, self.score, str(self.date))
-
-# TODO: class User(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    score = models.IntegerField(default=-1)
+    date = models.DateTimeField(auto_now=True)
