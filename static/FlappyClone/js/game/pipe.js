@@ -1,4 +1,7 @@
 
+const PIPE_START_X = -2000;
+const NUM_PIPES = 20;
+
 function Pipe(x, y, spacing) {
 	this.reuse(x, y, spacing);
 }

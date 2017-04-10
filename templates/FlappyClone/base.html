@@ -8,6 +8,13 @@
 		<!-- Location of static assets -->
 		<meta name="static" value="{% static 'FlappyClone/' %}">
 		
+		<!-- Usename if logged in -->
+		{% if user.is_authenticated %}
+			<meta name="username" value="{{ user.get_username }}">
+		{% else %}
+			<meta name="username" value="">
+		{% endif %}
+		
 		<!-- Libraries -->
 		<script src="{% static 'FlappyClone/lib/jquery-3.2.0.min.js' %}"></script>
 		<script src="{% static 'FlappyClone/lib/jquery-bigtext.js' %}"></script>

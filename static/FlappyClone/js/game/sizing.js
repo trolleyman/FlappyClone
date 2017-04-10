@@ -1,6 +1,7 @@
 
 const MIN_CANVAS_WIDTH = 320;
-const MAX_CANVAS_WIDTH = 1440;
+const MAX_CANVAS_WIDTH = 10000;
+const MAX_CANVAS_WIDTH_SIZING = 1440;
 const MIN_CANVAS_HEIGHT = 480;
 const MAX_CANVAS_HEIGHT = 850;
 
@@ -18,7 +19,7 @@ function getHeightRatio() {
 }
 
 function getWidthRatio() {
-	return (getCanvasWidth() - MIN_CANVAS_WIDTH) / (MAX_CANVAS_WIDTH - MIN_CANVAS_WIDTH);
+	return (getCanvasWidth() - MIN_CANVAS_WIDTH) / (MAX_CANVAS_WIDTH_SIZING - MIN_CANVAS_WIDTH);
 }
 
 function getAverageRatio() {

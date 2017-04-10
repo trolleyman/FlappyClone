@@ -194,8 +194,8 @@ function Game() {
 
 	// Setup pipes
 	this.pipes = [];
-	for (var i = 0; i < 10; i++) {
-		this.pipes[i] = new Pipe(-200);
+	for (var i = 0; i < NUM_PIPES; i++) {
+		this.pipes[i] = new Pipe(PIPE_START_X);
 	}
 	
 	// Setup handling focus events. see https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
@@ -342,7 +342,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.flappyVisible = true;
 			this.groundVisible = true;
 			for (var i = 0; i < this.pipes.length; i++) {
-				this.pipes[i] = new Pipe(-200);
+				this.pipes[i] = new Pipe(PIPE_START_X);
 			}
 			
 		} else if (s === STATE_PLAYING) {
@@ -359,7 +359,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			
 			if (prevState !== STATE_PAUSED) {
 				// regen pipes
-				for (var i = 0; i < 10; i++) {
+				for (var i = 0; i < NUM_PIPES; i++) {
 					this.pipes[i].passed = true;
 					this.pipes[i].x = -200;
 				}

@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from .forms import *
 
 def index(request):
-    return render(request, 'FlappyClone/index.html', {})
+    return render(request, 'FlappyClone/game.html', {})
 
 def login(request):
     # If this is a POST request we will process the form data
