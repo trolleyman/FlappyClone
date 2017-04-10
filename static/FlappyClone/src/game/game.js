@@ -152,12 +152,6 @@ function Game() {
 	
 	var submitFunction = (function() {
 		var name = this.usernameEntry.value;
-		var ret = isValidName(name);
-		if (!ret.valid) {
-			console.error("'" + name + "' is invalid: " + ret.reason);
-			alert(ret.reason);
-			return;
-		}
 		console.log("Submitting best score for '" + name + "': " + this.bestScore);
 		this.submitting = true;
 		this.submittingStartTime = Date.now().valueOf() / 1000.0;
@@ -180,7 +174,6 @@ function Game() {
 	var disableFunction = (function() {
 		if (!this.newBestScore
 			|| this.leaderboardLoading
-			|| !isValidName(this.usernameEntry.value).valid
 			|| this.submitting || this.submitted)
 			return true;
 		return false;
@@ -435,7 +428,7 @@ Object.defineProperty(Game.prototype, 'state', {
 					if (pos !== -1) {
 						this.leaderboardPos = pos;
 						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
-						this.beginTextEntryMode(MAX_NAME_LENGTH, isValidNameChar);
+						this.beginTextEntryMode(MAX_NAME_LENGTH, true);
 					}
 				}
 			}).bind(this);
