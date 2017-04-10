@@ -1,5 +1,13 @@
 {% extends "FlappyClone/base.html" %}
 {% load static %}
+{% block head %}
+	{% include "FlappyClone/flappyBackgroundHead.html" %}
+	<link rel="stylesheet" href="{% static 'FlappyClone/css/account.css' %}">
+	
+	<script src="{% static 'FlappyClone/js/account.js' %}"></script>
+{% endblock head %}
 {% block content %}
-TEST123456
+	<div id="title">
+	<h1>{{ user.get_username }}</h1>
+	</div>
 {% endblock content %}

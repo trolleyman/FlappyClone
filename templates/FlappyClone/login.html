@@ -1,12 +1,8 @@
 {% extends "FlappyClone/base.html" %}
 {% load static %}
 {% block head %}
+	{% include "FlappyClone/flappyBackgroundHead.html" %}
 	<link rel="stylesheet" href="{% static 'FlappyClone/css/login.css' %}">
-	<style>
-		#content {
-			background: #70C4CE url("{% static 'FlappyClone/img/backgroundLogin.png' %}") left bottom repeat-x;
-		}
-	</style>
 {% endblock head %}
 {% block content %}
 <div>

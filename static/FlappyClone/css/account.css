@@ -1,0 +1,10 @@
+#content h1, #content h2, #content h3, #content h4 {
+	font-family: FlappyFont;
+	text-align: center;
+	color: gold;
+	text-shadow: 2px 2px 0px black, -2px 2px 0px black, 2px -2px 0px black, -2px -2px 0px black;
+}
+
+#content h1 {
+	font-size: 5vw;
+}

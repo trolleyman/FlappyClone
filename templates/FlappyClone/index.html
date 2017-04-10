@@ -3,23 +3,19 @@
 {% block head %}
 	<link rel="stylesheet" href="{% static 'FlappyClone/css/game.css' %}">
 	
-	{% if debug %}
 	<script>"use strict";</script>
-	<script src="{% static 'FlappyClone/src/common/validation.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/sizing.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/fontfaceonload.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/intersection.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/cookie.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/score.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/button.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/rect.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/draw.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/pipe.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/bird.js' %}"></script>
-	<script src="{% static 'FlappyClone/src/game/game.js' %}"></script>
-	{% else %}
-	<script src="{% static 'FlappyClone/js/game.js' %}"></script>
-	{% endif %}
+	<script src="{% static 'FlappyClone/js/common/validation.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/sizing.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/fontfaceonload.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/intersection.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/cookie.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/score.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/button.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/rect.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/draw.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/pipe.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/bird.js' %}"></script>
+	<script src="{% static 'FlappyClone/js/game/game.js' %}"></script>
 {% endblock head %}
 {% block content %}
 	<div id="game-container">
