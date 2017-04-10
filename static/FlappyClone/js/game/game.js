@@ -37,13 +37,7 @@ function copyTouch(t) {
 function Game() {
 	// init user profile
 	this.userProfile = {"username":getLoggedInUsername(),"score":0};
-	getUserProfile(getLoggedInUsername(), function(profile) {
-		// Success
-		this.userProfile = profile;
-	}.bind(this), function(error) {
-		// Error
-		console.error("Error loading user profile: " + error);
-	}.bind(this));
+	this.updateUserProfile();
 	
 	// init canvas
 	this.canvas = document.getElementById("canvas");
@@ -222,6 +216,17 @@ function Game() {
 	this.state = STATE_LOADING;
 }
 
+Game.prototype.updateUserProfile = function() {
+	getUserProfile(this.userProfile.username, function(profile) {
+		// Success
+		console.log("Loaded user profile '" + this.userProfile.username + "': " + JSON.stringify(profile))
+		this.userProfile = profile;
+	}.bind(this), function(error) {
+		// Error
+		console.error("Error loading user profile: " + JSON.stringify(error, null, 4));
+	}.bind(this));
+}
+
 Game.prototype.loadImage = function(name, f) {
 	if (typeof f === "undefined")
 		f = function() {};
@@ -357,8 +362,13 @@ Object.defineProperty(Game.prototype, 'state', {
 			if (this.score > this.userProfile.score) {
 				this.userProfile.score = this.score;
 				this.newBestScore = true;
-				this.submitted = false;
-				this.errorSubmitting = false;
+				
+				// Submit new best score
+				submitScore(this.score, function() {
+					console.log("Score submitted sucessfully: " + this.score)
+				}.bind(this), function(error) {
+					console.error("Score submit error: " + this.score + ": " + JSON.stringify(error, null, 4))
+				}.bind(this))
 			}
 			this.bird.velY = 300;
 			this.bird.velX = 0;

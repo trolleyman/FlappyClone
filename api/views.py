@@ -1,11 +1,13 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseForbidden, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django.db.models import Q
 from django.contrib.auth.models import User
 
 from .. import models
+
+import json as js
 
 def leaderboard(request):
     json = '[' + ','.join(x.toLeaderboardEntryJSON() for x in models.UserProfile.objects.filter(~Q(score=0)).order_by('-score')[:10]) + ']'
@@ -14,7 +16,7 @@ def leaderboard(request):
 '''
 Get information about a specific user
 '''
-def userprofile(request):
+def profile(request):
     try:
         username = request.GET['username']
     except KeyError:
@@ -26,3 +28,30 @@ def userprofile(request):
         return HttpResponseNotFound('{"error":"User not found."}', content_type='application/json')
     
     return HttpResponse(user.userprofile.toJSON(), content_type='application/json')
+
+'''
+Submits a score to the database for the currently logged in user
+'''
+def submit(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed('{"error":"Only POST allowed."}', content_type='application/json')
+    
+    user = request.user
+    if not user.is_authenticated:
+        return HttpResponseForbidden('{"error":"User not authenticated."}', content_type='application/json')
+    
+    # Parse score
+    try:
+        score = request.POST.get('score')
+        score = int(score)
+        if score <= 0:
+            raise ValueError()
+    except KeyError:
+        return HttpResponseBadRequest('{"error":"score field not found."}', content_type='application/json')
+    except ValueError:
+        return HttpResponseBadRequest('{"error":"score field not valid."}', content_type='application/json')
+    
+    # Send score to database
+    user.userprofile.score = score
+    user.userprofile.save()
+    return HttpResponse('{}', content_type='application/json')

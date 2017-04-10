@@ -13,6 +13,7 @@ function getLoggedInUsername() {
 // Gets the user profile with specified username. Asynchronous.
 function getUserProfile(username, success, error) {
 	// User not logged in
+	console.log("Loading user profile '" + username + "'");
 	if (username === "") {
 		success({"score":0});
 		return;
@@ -21,6 +22,8 @@ function getUserProfile(username, success, error) {
 	$.ajax({
 		url: USER_PROFILE_API_PATH,
 		dataType: "json",
+		method: "GET",
+		data: {"username": username},
 		success: success,
 		error: error,
 	})
@@ -29,6 +32,7 @@ function getUserProfile(username, success, error) {
 // Submits the score to the currently logged in user. Does nothing if no user is currently logged in
 function submitScore(score, success, error) {
 	var username = getLoggedInUsername();
+	console.log("Submitting score " + score + " for user '" + username + "'");
 	if (username === "")
 		return;
 	
@@ -36,10 +40,7 @@ function submitScore(score, success, error) {
 		url: SUBMIT_API_PATH,
 		dataType: "json",
 		method: "POST",
-		data: {
-			"username": username,
-			"score": score,
-		},
+		data: {"score": score},
 		success: success,
 		error: error,
 	})
