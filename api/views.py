@@ -5,18 +5,18 @@ from django.utils import timezone
 from django.db.models import Q
 from django.contrib.auth.models import User
 
-from .. import models
-
+import datetime
 import json as js
 
+from .. import models
+
 def leaderboard(request):
+    """Gets the current top 10 players"""
     json = '[' + ','.join(x.toLeaderboardEntryJSON() for x in models.UserProfile.objects.filter(~Q(score=0)).order_by('-score')[:10]) + ']'
     return HttpResponse(json, content_type='application/json')
 
-'''
-Get information about a specific user
-'''
 def profile(request):
+    """Get information about a specific user"""
     try:
         username = request.GET['username']
     except KeyError:
@@ -29,10 +29,8 @@ def profile(request):
     
     return HttpResponse(user.userprofile.toJSON(), content_type='application/json')
 
-'''
-Submits a score to the database for the currently logged in user
-'''
 def submit(request):
+    """Submits a score to the database for the currently logged in user"""
     if request.method != 'POST':
         return HttpResponseNotAllowed('{"error":"Only POST allowed."}', content_type='application/json')
     
@@ -53,5 +51,6 @@ def submit(request):
     
     # Send score to database
     user.userprofile.score = score
+    user.userprofile.date = datetime.now()
     user.userprofile.save()
     return HttpResponse('{}', content_type='application/json')

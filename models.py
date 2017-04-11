@@ -24,6 +24,7 @@ class UserProfile(models.Model):
             'username': self.user.get_username(),
             'score': self.score,
             'date': str(self.date),
+            'medal': self.medal,
         })
     
     @property

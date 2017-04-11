@@ -11,7 +11,7 @@ $(function(){
 	// For fitText
 	$('.detail').fitText(1.0, {
 		minFontSize: 14,
-		maxFontSize: 40,
+		maxFontSize: 34,
 	});
 })
 
