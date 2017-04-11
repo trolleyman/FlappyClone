@@ -19,10 +19,9 @@ def logout(request):
 def login(request):
     # Get URL to redirect to upon succesful logging in/out
     if request.method == 'GET':
-        # Get the redirect URL by getting the 'next' parameter, if it is available
         redirect_url = request.GET.get('next', None)
     elif request.method == 'POST':
-        redirect_url = request.POST.get('next', None)
+        redirect_url = request.POST.get('next', reverse('game'))
     
     # If this is a POST request we will process the form data
     if request.method == 'POST' and request.POST.get('action', '') == 'login':
@@ -38,20 +37,18 @@ def login(request):
                 
                 # Check if user is active
                 if not user.is_active:
-                    raise ValidationError('User is not active')
-                
-                # Login
-                user = authenticate(username=username, password=password)
-                if user is not None:
-                    auth_login(request, user)
-                    return HttpResponseRedirect(redirect_url)
+                    login_form.add_error('username', 'User is not active')
                 else:
-                    raise ValidationError('Invalid password.')
+                    # Login
+                    user = authenticate(username=username, password=password)
+                    if user is not None:
+                        auth_login(request, user)
+                        return HttpResponseRedirect(redirect_url)
+                    else:
+                        login_form.add_error('password', 'Invalid password.')
                 
             except ObjectDoesNotExist:
                 login_form.add_error('username', 'User does not exist.')
-            except ValidationError as e:
-                login_form.add_error('username', e)
         
         signup_form = SignupForm()
         
@@ -74,7 +71,7 @@ def login(request):
                     pass
                 else:
                     signup_form.add_error('username', 'Username taken.')
-                    raise ValidationError('Username taken.')
+                    raise ValueError()
                 
                 # Ensure that the email is not already in the system
                 try:
@@ -84,7 +81,7 @@ def login(request):
                     pass
                 else:
                     signup_form.add_error('email', 'Email address taken.')
-                    raise ValidationError('Email address taken.')
+                    raise ValueError()
                 
                 # Create user
                 user = User.objects.create_user(username, email, password)
@@ -92,7 +89,7 @@ def login(request):
                 # Login user
                 auth_login(request, user)
                 return HttpResponseRedirect(redirect_url)
-            except ValidationError as e:
+            except ValueError:
                 pass
         
         login_form = LoginForm()
