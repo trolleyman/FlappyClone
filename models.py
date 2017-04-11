@@ -25,6 +25,17 @@ class UserProfile(models.Model):
             'score': self.score,
             'date': str(self.date),
         })
+    
+    @property
+    def medal(self):
+        if self.score <= 4:
+            return 0 # None
+        elif self.score <= 15:
+            return 1 # Bronze
+        elif self.score <= 30:
+            return 2 # Silver
+        else:
+            return 3 # Gold
 
 '''
 Register UserProfile every time a new user is saved
