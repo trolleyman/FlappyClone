@@ -17,6 +17,13 @@ def logout(request):
     return HttpResponseRedirect(reverse('login'))
 
 def login(request):
+    # Get URL to redirect to upon succesful logging in/out
+    if request.method == 'GET':
+        # Get the redirect URL by getting the 'next' parameter, if it is available
+        redirect_url = request.GET.get('next', None)
+    elif request.method == 'POST':
+        redirect_url = request.POST.get('next', None)
+    
     # If this is a POST request we will process the form data
     if request.method == 'POST' and request.POST.get('action', '') == 'login':
         login_form = LoginForm(request.POST)
@@ -37,7 +44,7 @@ def login(request):
                 user = authenticate(username=username, password=password)
                 if user is not None:
                     auth_login(request, user)
-                    return HttpResponseRedirect(reverse('game'))
+                    return HttpResponseRedirect(redirect_url)
                 else:
                     raise ValidationError('Invalid password.')
                 
@@ -84,7 +91,7 @@ def login(request):
                 
                 # Login user
                 auth_login(request, user)
-                return HttpResponseRedirect(reverse('game'))
+                return HttpResponseRedirect(redirect_url)
             except ValidationError as e:
                 pass
         
@@ -94,7 +101,7 @@ def login(request):
         login_form = LoginForm()
         signup_form = SignupForm()
     
-    return render(request, 'FlappyClone/login.html', {'login_form': login_form, 'signup_form': signup_form})
+    return render(request, 'FlappyClone/login.html', {'login_form': login_form, 'signup_form': signup_form, 'next': redirect_url})
 
 @login_required
 def account(request):

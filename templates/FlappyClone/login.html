@@ -6,34 +6,9 @@
 {% endblock head %}
 {% block content %}
 <div>
-	<div id="login" class="clearfix">
-		<h1>Log in</h1>
-		<form method="post">
-			<input type="hidden" name="action" value="login" />
-			{% csrf_token %}
-			{% for field in login_form %}
-				<div>
-					{{ field.label_tag }} {{ field }}
-				</div>
-				{{ field.errors }}
-			{% endfor %}
-			<div><input type="submit" value="Log in" /></div>
-		</form>
-	</div>
+	{% include "FlappyClone/form.html" with action="login" action_name="Log in" form=login_form %}
 	<div id="seperator-container"><div class="seperator"><div></div></div></div>
-	<div id="signup" class="clearfix">
-		<h1>Sign up</h1>
-		<form method="post">
-			<input type="hidden" name="action" value="signup" />
-			{% csrf_token %}
-			{% for field in signup_form %}
-				<div>
-					{{ field.label_tag }} {{ field }}
-				</div>
-				{{ field.errors }}
-			{% endfor %}
-			<div><input type="submit" value="Sign up" /></div>
-		</form>
+	{% include "FlappyClone/form.html" with action="signup" action_name="Sign up" form=signup_form %}
 	</div>
 </div>
 {% endblock content %}
