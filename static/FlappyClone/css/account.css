@@ -7,7 +7,7 @@
 #title {
 	height: 100px;
 	width: 80%;
-	margin: 10px 10%;
+	margin: 10% 10% 10px 10%;
 	color: gold;
 	text-shadow: 3px 3px 0px black, -3px 3px 0px black, 3px -3px 0px black, -3px -3px 0px black;
 }

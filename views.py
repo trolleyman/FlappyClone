@@ -1,13 +1,20 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from django.contrib.auth import get_user_model, authenticate, login as auth_login
+from django.contrib.auth import get_user_model, authenticate, login as auth_login, logout as auth_logout
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.contrib.auth.models import User
+from django.conf.urls import url
+from django.urls import reverse
+from django.contrib.auth.decorators import login_required
 
 from .forms import *
 
 def index(request):
     return render(request, 'FlappyClone/game.html', {})
+
+def logout(request):
+    auth_logout(request)
+    return HttpResponseRedirect(reverse('login'))
 
 def login(request):
     # If this is a POST request we will process the form data
@@ -30,7 +37,7 @@ def login(request):
                 user = authenticate(username=username, password=password)
                 if user is not None:
                     auth_login(request, user)
-                    return HttpResponseRedirect('login_successful/')
+                    return HttpResponseRedirect(reverse('game'))
                 else:
                     raise ValidationError('Invalid password.')
                 
@@ -77,7 +84,7 @@ def login(request):
                 
                 # Login user
                 auth_login(request, user)
-                return HttpResponseRedirect('signup_successful/')
+                return HttpResponseRedirect(reverse('game'))
             except ValidationError as e:
                 pass
         
@@ -89,5 +96,6 @@ def login(request):
     
     return render(request, 'FlappyClone/login.html', {'login_form': login_form, 'signup_form': signup_form})
 
+@login_required
 def account(request):
     return render(request, 'FlappyClone/account.html', {})
