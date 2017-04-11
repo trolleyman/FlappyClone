@@ -23,17 +23,17 @@
 	</div>
 	{% endif %}
 	{% if user.userprofile.medal == 0 %}
-	<img id="medal" src="{% static 'FlappyClone/img/profile/medal0.png' %}" />
+	<img id="medal" src="{% static 'FlappyClone/img/account/medal0.png' %}" />
 	{% elif user.userprofile.medal == 1 %}
-	<img id="medal" src="{% static 'FlappyClone/img/profile/medal1.png' %}" />
+	<img id="medal" src="{% static 'FlappyClone/img/account/medal1.png' %}" />
 	{% elif user.userprofile.medal == 2 %}
-	<img id="medal" src="{% static 'FlappyClone/img/profile/medal2.png' %}" />
+	<img id="medal" src="{% static 'FlappyClone/img/account/medal2.png' %}" />
 	{% elif user.userprofile.medal == 3 %}
-	<img id="medal" src="{% static 'FlappyClone/img/profile/medal3.png' %}" />
+	<img id="medal" src="{% static 'FlappyClone/img/account/medal3.png' %}" />
 	{% endif %}
 	<div>
 		<form action="{% url 'logout' %}">
-			<input type="image" src="{% static 'FlappyClone/img/profile/logout.png' %}" />
+			<input type="image" src="{% static 'FlappyClone/img/account/logout.png' %}" />
 		</form>
 	</div>
 {% endblock content %}
