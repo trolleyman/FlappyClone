@@ -51,6 +51,6 @@ def submit(request):
     
     # Send score to database
     user.userprofile.score = score
-    user.userprofile.date = datetime.now()
+    user.userprofile.date = datetime.datetime.now()
     user.userprofile.save()
     return HttpResponse('{}', content_type='application/json')
