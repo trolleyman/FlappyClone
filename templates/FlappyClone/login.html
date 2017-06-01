@@ -6,9 +6,9 @@
 {% endblock head %}
 {% block content %}
 <div>
-	{% include "FlappyClone/form.html" with action="login" action_name="Log in" form=login_form %}
+	{% include "FlappyClone/form.html" with action="login" action_name="Log in" form=login_form after='<div id="forgot"><a href="password_change">Forgot your password?</a></div>' %}
 	<div id="seperator-container"><div class="seperator"><div></div></div></div>
-	{% include "FlappyClone/form.html" with action="signup" action_name="Sign up" form=signup_form %}
+	{% include "FlappyClone/form.html" with action="signup" action_name="Sign up" form=signup_form after='' %}
 	</div>
 </div>
 {% endblock content %}

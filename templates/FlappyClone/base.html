@@ -8,7 +8,7 @@
 		<!-- Location of static assets -->
 		<meta name="static" value="{% static 'FlappyClone/' %}">
 		
-		<!-- Usename if logged in -->
+		<!-- Username if logged in -->
 		{% if user.is_authenticated %}
 			<meta name="username" value="{{ user.get_username }}">
 		{% else %}
