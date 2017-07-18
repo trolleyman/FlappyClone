@@ -751,7 +751,7 @@ Game.prototype.drawLoadingUI = function(c) {
 Game.prototype.drawPlayingUI = function(c) {
 	c.textAlign = "left";
 	c.textBaseline = "top";
-	c.font = "30px FlappyFont";
+	c.font = "30px FlappyFont, sans-serif";
 	drawFlappyText(c, this.score, getScoreOffsetX(), getScoreOffsetY(), "white", 2);
 }
 
@@ -763,7 +763,7 @@ Game.prototype.drawStartUI = function(c) {
 	
 	c.textAlign = "center";
 	c.textBaseline = "top";
-	c.font = "60px FlappyFont";
+	c.font = "60px FlappyFont, sans-serif";
 	var x = Math.floor(c.canvas.width / 2);
 	var col = "gold";//"#30e830";
 	drawFlappyText(c, "Flappy", x, getTitleStartY(), col);
@@ -773,7 +773,7 @@ Game.prototype.drawStartUI = function(c) {
 Game.prototype.drawDeathUI = function(c) {
 	c.textAlign = "center";
 	c.textBaseline = "top";
-	c.font = "60px FlappyFont";
+	c.font = "60px FlappyFont, sans-serif";
 	var titleCol = "gold";
 	if (!isGameOverMultiline()) {
 		drawFlappyText(c, "Game Over", Math.floor(c.canvas.width / 2), getGameOverY(), titleCol);
@@ -782,7 +782,7 @@ Game.prototype.drawDeathUI = function(c) {
 		drawFlappyText(c, "Over", Math.floor(c.canvas.width / 2), getGameOverY2(), titleCol);
 	}
 	
-	c.font = "30px FlappyFont";
+	c.font = "30px FlappyFont, sans-serif";
 	var diff = 70;
 	var l = Math.floor(c.canvas.width/2 - diff);
 	var r = Math.floor(c.canvas.width/2 + diff);
@@ -824,10 +824,10 @@ Game.prototype.drawLeaderboardErrorUI = function(c) {
 	
 	c.textAlign = "center";
 	c.textBaseline = "top";
-	c.font = "60px FlappyFont";
+	c.font = "60px FlappyFont, sans-serif";
 	drawFlappyText(c, "Error", x, 110, "red");
 	var spacing = 50, startY = 210;
-	c.font = "30px FlappyFont";
+	c.font = "30px FlappyFont, sans-serif";
 	drawFlappyText(c, "The leaderboard could", x, startY, "white", 3)
 	drawFlappyText(c, "not be loaded.", x, startY + spacing, "white", 3)
 }
@@ -835,14 +835,14 @@ Game.prototype.drawLeaderboardErrorUI = function(c) {
 Game.prototype.drawLeaderboardHeader = function(c) {
 	c.textAlign = "center";
 	c.textBaseline = "top";
-	c.font = getLeaderboardHeaderFontSize() + "px FlappyFont";
+	c.font = getLeaderboardHeaderFontSize() + "px FlappyFont, sans-serif";
 	var titleCol = "gold";
 	drawFlappyText(c, "Leaderboard", Math.floor(c.canvas.width / 2), getLeaderboardHeaderY(), titleCol, getLeaderboardHeaderFontOutline());
 }
 
 Game.prototype.drawLeaderboard = function(c) {
 	c.textBaseline = "top";
-	c.font = getLeaderboardFontSize() + "px FlappyFont";
+	c.font = getLeaderboardFontSize() + "px FlappyFont, sans-serif";
 	
 	var totalW = Math.min(c.canvas.width, MAX_LEADERBOARD_WIDTH);
 	
@@ -896,7 +896,7 @@ Game.prototype.drawLoadingAnimation = function(c, dt, x, y, drawText) {
 
 		c.textAlign = "middle";
 		c.textBaseline = "bottom";
-		c.font = "30px FlappyFont";
+		c.font = "30px FlappyFont, sans-serif";
 		drawFlappyText(c, text, x, y + 8, "white", 2);
 	}
 	

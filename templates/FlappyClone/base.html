@@ -44,11 +44,11 @@
 	</head>
 	<body>
 		<div id="header">
-			<div id="header-logo"><a href="{% url 'game' %}">FlappyClone</a></div>
+			<a id="header-logo" href="{% url 'game' %}">FlappyClone</a>
 			{% if user.is_authenticated %}
-				<div id="header-login"><a href="{% url 'account' %}">{{ user.get_username }}</a></div>
+				<a id="header-login" href="{% url 'account' %}">{{ user.get_username }}</a>
 			{% else %}
-				<div id="header-login"><a href="{% url 'login' %}">Log in / Sign up</a></div>
+				<a id="header-login" href="{% url 'login' %}">Log in / Sign up</a>
 			{% endif %}
 		</div>
 		<div id="content">
