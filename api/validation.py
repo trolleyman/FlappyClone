@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import *
 
-import re;
+import re
 
 USERNAME_MIN_LENGTH = 1
 USERNAME_MAX_LENGTH = 16
