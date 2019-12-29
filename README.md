@@ -1,8 +1,8 @@
 # Flappy Clone
 
-http://www.trolleyman.org/FlappyClone/
+https://trolleyman.org/FlappyClone/
 
-A Flappy Bird clone, but with a global leaderboard.
+A Flappy Bird clone with a global leaderboard.
 
 Coded using JavaScript, PHP and MySQL.
 
