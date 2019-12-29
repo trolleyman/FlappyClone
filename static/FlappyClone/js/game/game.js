@@ -353,6 +353,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.oscillate = true;
 			this.regenPipes = false;
 			this.cameraUpdate = true;
+			this.flappyStopped = false;
 			this.flappyVisible = true;
 			this.groundVisible = true;
 			for (var i = 0; i < this.pipes.length; i++) {
@@ -368,6 +369,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.paused = false;
 			this.prevTime = NaN; // we could have come from the paused state, we need to update prevTime
 			this.cameraUpdate = true;
+			this.flappyStopped = false;
 			this.flappyVisible = true;
 			this.groundVisible = true;
 			
@@ -401,6 +403,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
+			this.flappyStopped = true;
 			if (this.score > this.bestScore) {
 				this.bestScore = this.score;
 				this.newBestScore = true;
@@ -409,7 +412,6 @@ Object.defineProperty(Game.prototype, 'state', {
 				setBestScore(this.bestScore);
 			}
 			this.bird.velY = 300;
-			this.bird.velX = 0;
 			
 		} else if (s === STATE_LEADERBOARD) {
 			this.buttons = [this.buttonRestartLeaderboard, this.buttonSubmit];
@@ -697,7 +699,19 @@ Game.prototype.updateFlappy = function(dt) {
 		bird.velY = 0;
 	}
 	
-	// update positions using velocity
+	// Update velocity
+	if (this.flappyStopped) {
+		bird.velX = 0;
+	} else {
+		var nearestPipeDiffX = Math.min.apply(null, this.pipes.filter(v => v.x > this.bird.posX).map(v => v.x)) - this.bird.posX;
+		if (nearestPipeDiffX > 250 && nearestPipeDiffX < 10000) {
+			bird.velX = Math.min(600, 150 + (nearestPipeDiffX - 250) / 1);
+		} else {
+			bird.velX = 150;
+		}
+	}
+	
+	// Update positions using velocity
 	bird.posX += dt * bird.velX;
 	bird.posY += dt * bird.velY;
 	
