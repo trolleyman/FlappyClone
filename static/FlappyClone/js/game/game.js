@@ -247,7 +247,7 @@ function Game() {
 	this.stats = document.getElementById("stats");
 	
 	// Setup vars
-	this.debugAllowed = false; // is debugging allowed?
+	this.debugAllowed = document.head.querySelector("meta[name=debug]") !== null; // is debugging allowed?
 	this.debugView = false;
 	this.cameraUpdate = true; // update the camera to be locked onto the bird?
 	this.flappyDt = 0.08; // seconds per flappy frame
@@ -442,7 +442,7 @@ Object.defineProperty(Game.prototype, 'state', {
 					if (pos !== -1) {
 						this.leaderboardPos = pos;
 						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
-						this.beginTextEntryMode(MAX_NAME_LENGTH, isValidNameChar);
+						this.beginTextEntryMode(MAX_NAME_LENGTH, isValidNameChar, this.buttonSubmit.f);
 					}
 				}
 			}).bind(this);
@@ -495,7 +495,7 @@ Game.prototype.mainLoop = function() {
 	this.keyDowns = [];
 };
 
-Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
+Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar, submitFunction) {
 	this.usernameEntry.value = "";
 	if (typeof maxLength === "undefined")
 		maxLength = 32;
@@ -504,6 +504,9 @@ Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
 
 	this.usernameEntry.onkeypress = (function(e) {
 		var s = String.fromCharCode(e.charCode);
+		if (typeof submitFunction !== "undefined" && e.code.toLowerCase() === 'enter') {
+			submitFunction();
+		}
 		for (var i = 0; i < s.length; i++)
 			if (!isLegalChar(s[i])) {
 				e.preventDefault();

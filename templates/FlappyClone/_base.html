@@ -5,6 +5,11 @@
 		<meta charset="utf-8">
 		<title>{%block title%}Flappy Clone{% endblock title %}</title>
 		
+		{% if debug %}
+		<!-- Debug flag -->
+		<meta name="debug" value="1">
+		{% endif %}
+		
 		<!-- Location of static assets -->
 		<meta name="static" value="{% static 'FlappyClone/' %}">
 		
