@@ -2,29 +2,23 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 
-import json as js
+import json
 
 
-def dumps(o):
-    return js.dumps(o, separators=(',', ':'))
+def to_json(o):
+    return json.dumps(o, separators=(',', ':'))
 
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    score = models.IntegerField(default=0)
-    date = models.DateTimeField(default=None, null=True)
+class LeaderboardEntry(models.Model):
+    name = models.CharField(max_length=127)
+    score = models.IntegerField()
+    date = models.DateTimeField()
 
-    def toLeaderboardEntryJSON(self):
-        return dumps({
-            'username': self.user.get_username(),
+    def to_json(self):
+        return to_json({
+            'name' : self.name,
             'score': self.score,
-        })
-
-    def toJSON(self):
-        return dumps({
-            'username': self.user.get_username(),
-            'score': self.score,
-            'date': str(self.date),
+            'date' : str(self.date),
             'medal': self.medal,
         })
 
@@ -39,17 +33,5 @@ class UserProfile(models.Model):
         else:
             return 3  # Gold
 
-
-'''
-Register UserProfile every time a new user is saved
-'''
-
-
-def create_profile(sender, **kwargs):
-    user = kwargs["instance"]
-    if kwargs["created"]:
-        up = UserProfile(user=user)
-        up.save()
-
-
-post_save.connect(create_profile, sender=User)
+    def __str__(self):
+        return '{}: {} - {}'.format(self.name, self.score, str(self.date))

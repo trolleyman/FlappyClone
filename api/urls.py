@@ -5,6 +5,5 @@ from . import views
 
 urlpatterns = [
     url(r'^leaderboard$', views.leaderboard),
-    url(r'^profile$', views.profile),
-    url(r'^submit$', csrf_exempt(views.submit)),
+    url(r'^submit$', csrf_exempt(views.submit)),  # TODO: re-enable csrf
 ]

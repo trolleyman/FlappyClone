@@ -11,6 +11,7 @@ const STATE_PAUSED = 3;
 const STATE_DEATH = 4;
 const STATE_LEADERBOARD = 5;
 const STATE_LEADERBOARD_ERROR = 6;
+const STATE_ERROR = 7;
 
 const WHICH_CODE_SPACE = 32;
 
@@ -35,12 +36,11 @@ function copyTouch(t) {
 }
 
 function Game() {
-	// init user profile
-	this.userProfile = {"username":getLoggedInUsername(),"score":0};
-	this.updateUserProfile();
-	
 	// init canvas
 	this.canvas = document.getElementById("canvas");
+	
+	// init username entry
+	this.usernameEntry = document.getElementById("username-entry");
 	
 	// init mouse
 	this.canvas.onmousedown = this.onmousedown.bind(this);
@@ -120,6 +120,8 @@ function Game() {
 	this.imgs.buttonPause = this.loadImage("buttonPause.png");
 	this.imgs.buttonRestart = this.loadImage("buttonRestart.png");
 	this.imgs.buttonLeaderboard = this.loadImage("buttonLeaderboard.png");
+	this.imgs.buttonSubmit = this.loadImage("buttonSubmit.png");
+	this.imgs.buttonSubmitDisabled = this.loadImage("buttonSubmitDisabled.png");
 	this.imgs.buttonRetry = this.loadImage("buttonRetry.png");
 	
 	// Setup buttons
@@ -149,6 +151,46 @@ function Game() {
 		this.imgs.buttonRestart,
 		setState.bind(this, STATE_START));
 	
+	var submitFunction = (function() {
+		var name = this.usernameEntry.value;
+		var ret = isValidName(name);
+		if (!ret.valid) {
+			console.error("'" + name + "' is invalid: " + ret.reason);
+			alert(ret.reason);
+			return;
+		}
+		console.log("Submitting best score for '" + name + "': " + this.bestScore);
+		this.submitting = true;
+		this.submittingStartTime = Date.now().valueOf() / 1000.0;
+		this.errorSubmitting = false;
+		this.submitted = false;
+		this.endTextEntryMode();
+		this.leaderboard[this.leaderboardPos].name = name;
+		submitBestScore(name, this.bestScore, (function() {
+			console.log("Submitted score.");
+			this.submitting = false;
+			this.submitted = true;
+		}).bind(this), (function(error) {
+			this.submitting = false;
+			this.submitted = false;
+			console.log("error submitting score: " + error);
+			this.errorSubmitting = true;
+		}).bind(this));
+	}).bind(this);
+
+	var disableFunction = (function() {
+		if (!this.newBestScore
+			|| this.leaderboardLoading
+			|| !isValidName(this.usernameEntry.value).valid
+			|| this.submitting || this.submitted)
+			return true;
+		return false;
+	}).bind(this);
+
+	this.buttonSubmit = new DisableButton(
+		(function() { return this.canvas.width/2 + spacing/2; }).bind(this), dy,
+		this.imgs.buttonSubmit, this.imgs.buttonSubmitDisabled, submitFunction, disableFunction);
+
 	dy = 400;
 	this.buttonRestartLeaderboardError = new Button(
 		(function() { return this.canvas.width/2 - this.imgs.buttonRestart.width - spacing/2; }).bind(this), dy,
@@ -212,34 +254,11 @@ function Game() {
 	this.paused = false;
 	this.cameraX = 0;
 	
+	this.beginTextEntryMode();
+	this.endTextEntryMode();
+	
 	// Setup state
 	this.state = STATE_LOADING;
-}
-
-Game.prototype.updateUserProfile = function() {
-	getUserProfile(this.userProfile.username, function(profile) {
-		// Success
-		console.log("Loaded user profile '" + this.userProfile.username + "': " + JSON.stringify(profile))
-		this.userProfile = profile;
-	}.bind(this), function(error) {
-		// Error
-		console.error("Error loading user profile: " + JSON.stringify(error, null, 4));
-	}.bind(this));
-}
-
-Game.prototype.updateLeaderboard = function() {
-	var successFunction = (function(leaderboard) {
-		this.leaderboard = leaderboard;
-		this.leaderboardLoading = false;
-		console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
-		console.log("Leaderboard: " + JSON.stringify(leaderboard));
-	}).bind(this);
-	var errorFunction = (function(err) {
-		console.log("Error loading leaderboard: " + err);
-		this.state = STATE_LEADERBOARD_ERROR;
-	}).bind(this);
-	
-	getLeaderboard(successFunction, errorFunction);
 }
 
 Game.prototype.loadImage = function(name, f) {
@@ -252,9 +271,15 @@ Game.prototype.loadImage = function(name, f) {
 	var img = new Image();
 	img.onload = (function() {
 		f();
+		console.log('Loaded image: ' + name + '(loaded ' + ((this.imagesLoadedNum || 0) + 1) + '/' + this.imagesLoadedMax + ')')
 		this.notfiyLoadedImage();
 	}).bind(this);
+	img.onerror = (function() {
+		this.errorMessage = "Image " + name + " could not be loaded";
+		this.state = STATE_ERROR;
+	}).bind(this);
 	img.src = document.head.querySelector("meta[name=static]").getAttribute('value') + 'img/' + name;
+	console.log('Loading image: ' + name + '...')
 	return img;
 }
 
@@ -304,6 +329,7 @@ Object.defineProperty(Game.prototype, 'state', {
 		this.stateChangeTime = Date.now().valueOf();
 		var prevState = this.state_;
 		this.state_ = s;
+		this.endTextEntryMode();
 		if (s === STATE_LOADING) {
 			this.buttons = [];
 			this.bird = new Bird();
@@ -318,6 +344,7 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.buttons = [];
 			this.deadFlappyImage = false;
 			this.gravity = 0;
+			this.bestScore = getBestScore();
 			this.prevTime = NaN; // clear prevTime
 			this.score = 0;
 			this.paused = false;
@@ -374,22 +401,18 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
-			if (this.score > this.userProfile.score) {
-				this.userProfile.score = this.score;
+			if (this.score > this.bestScore) {
+				this.bestScore = this.score;
 				this.newBestScore = true;
-				
-				// Submit new best score
-				submitScore(this.score, function() {
-					console.log("Score submitted sucessfully: " + this.score)
-				}.bind(this), function(error) {
-					console.error("Score submit error: " + this.score + ": " + JSON.stringify(error, null, 4))
-				}.bind(this))
+				this.submitted = false;
+				this.errorSubmitting = false;
+				setBestScore(this.bestScore);
 			}
 			this.bird.velY = 300;
 			this.bird.velX = 0;
 			
 		} else if (s === STATE_LEADERBOARD) {
-			this.buttons = [this.buttonRestartLeaderboard];
+			this.buttons = [this.buttonRestartLeaderboard, this.buttonSubmit];
 			this.deadFlappyImage = true;
 			this.gravity = GRAVITY;
 			this.oscillate = false;
@@ -399,8 +422,37 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
-			this.updateLeaderboard();
-			
+
+			var successFunction = (function(leaderboard) {
+				this.leaderboard = leaderboard;
+				this.leaderboardLoading = false;
+				console.log("Leaderboard loaded (" + leaderboard.length + " entries)");
+				console.log("Leaderboard: " + JSON.stringify(leaderboard));
+				if (this.newBestScore) {
+					// find if the user fits on the leaderboard
+					var pos = -1;
+					for (var i = 0; i < NUM_LEADERBOARD_ENTRIES; i++) {
+						var e = leaderboard[i];
+						if (typeof e === "undefined" || this.bestScore > e.score) {
+							pos = i;
+							break;
+						}
+					}
+
+					if (pos !== -1) {
+						this.leaderboardPos = pos;
+						leaderboard.splice(pos, 0, {user: true, name: "", score: this.bestScore});
+						this.beginTextEntryMode(MAX_NAME_LENGTH, isValidNameChar);
+					}
+				}
+			}).bind(this);
+			var errorFunction = (function(err) {
+				console.log("Error loading leaderboard: " + err);
+				this.state = STATE_LEADERBOARD_ERROR;
+			}).bind(this);
+
+			getLeaderboard(successFunction, errorFunction);
+
 		} else if (this.state === STATE_LEADERBOARD_ERROR) {
 			this.buttons = [this.buttonRestartLeaderboardError, this.buttonRetry];
 			this.deadFlappyImage = true;
@@ -410,7 +462,16 @@ Object.defineProperty(Game.prototype, 'state', {
 			this.cameraUpdate = true;
 			this.flappyVisible = true;
 			this.groundVisible = true;
-			
+		
+		} else if (this.state === STATE_ERROR) {
+			this.buttons = [];
+			this.paused = true; // no updates
+			this.flappyi = 0;
+			this.regenPipes = false;
+			this.cameraUpdate = false;
+			this.flappyVisible = false;
+			this.groundVisible = false;
+
 		} else {
 			console.log("Error: Invalid state: " + s);
 			this.state = STATE_START;
@@ -433,6 +494,31 @@ Game.prototype.mainLoop = function() {
 	this.keyUps = [];
 	this.keyDowns = [];
 };
+
+Game.prototype.beginTextEntryMode = function(maxLength, isLegalChar) {
+	this.usernameEntry.value = "";
+	if (typeof maxLength === "undefined")
+		maxLength = 32;
+	if (typeof isLegalChar === "undefined")
+		isLegalChar = function(c) { return true; };
+
+	this.usernameEntry.onkeypress = (function(e) {
+		var s = String.fromCharCode(e.charCode);
+		for (var i = 0; i < s.length; i++)
+			if (!isLegalChar(s[i])) {
+				e.preventDefault();
+				break;
+			}
+	}).bind(this);
+
+	this.usernameEntry.maxLength = maxLength;
+	this.usernameEntry.style.visibility = "visible";
+	this.usernameEntry.focus();
+}
+
+Game.prototype.endTextEntryMode = function() {
+	this.usernameEntry.style.visibility = "hidden";
+}
 
 Game.prototype.processKeys = function() {
 	for (var i = 0; i < this.keyDowns.length; i++) {
@@ -733,6 +819,9 @@ Game.prototype.drawUI = function(c) {
 	if (this.state === STATE_LEADERBOARD_ERROR)
 		this.drawLeaderboardErrorUI(c);
 	
+	if (this.state === STATE_ERROR)
+		this.drawErrorUI(c);
+	
 	// draw buttons
 	var bs = this.buttons;
 	for (var i = 0; i < bs.length; i++) {
@@ -791,8 +880,8 @@ Game.prototype.drawDeathUI = function(c) {
 	var outline = 3;
 	drawFlappyText(c, "Score", l, t, "white", outline);
 	drawFlappyText(c, "Best" , r, t, "white", outline);
-	drawFlappyText(c, this.score            , l, b, "white", outline);
-	drawFlappyText(c, this.userProfile.score, r, b, "white", outline);
+	drawFlappyText(c, this.score    , l, b, "white", outline);
+	drawFlappyText(c, this.bestScore, r, b, "white", outline);
 
 	if (this.newBestScore)
 		drawImage(c, this.imgs.new, r + 27, t - 10);
@@ -809,7 +898,7 @@ Game.prototype.drawLeaderboardUI = function(c) {
 	}
 }
 
-Game.prototype.drawLeaderboardErrorUI = function(c) {	
+Game.prototype.drawLeaderboardErrorUI = function(c) {
 	var img = this.imgs.deadFlappy[2];
 	var offsetX = -img.width/2;
 	var offsetY = -img.height/2;
@@ -830,6 +919,27 @@ Game.prototype.drawLeaderboardErrorUI = function(c) {
 	c.font = "30px FlappyFont, sans-serif";
 	drawFlappyText(c, "The leaderboard could", x, startY, "white", 3)
 	drawFlappyText(c, "not be loaded.", x, startY + spacing, "white", 3)
+}
+
+Game.prototype.drawErrorUI = function(c) {
+	var img = this.imgs.deadFlappy[2];
+	var offsetX = -img.width/2;
+	var offsetY = -img.height/2;
+	var x = c.canvas.width/2;
+	var y = 275;
+	
+	c.translate(x, y);
+	c.rotate(Math.PI);
+	drawImage(c, img, offsetX, offsetY);
+	c.rotate(-Math.PI);
+	c.translate(-x, -y);
+	
+	c.textAlign = "center";
+	c.textBaseline = "top";
+	c.font = "50px FlappyFont, sans-serif";
+	drawFlappyText(c, "Error", x, y + 50, "red");
+	c.font = "25px FlappyFont, sans-serif";
+	drawFlappyText(c, this.errorMessage || "Unknown error.", x, y + 125, "white", 2)
 }
 
 Game.prototype.drawLeaderboardHeader = function(c) {
@@ -870,15 +980,38 @@ Game.prototype.drawLeaderboard = function(c) {
 			break;
 		
 		var col = "white";
-		// Highlight current user
-		if (e.username === this.userProfile.username) {
-			col = "rgb(190, 255, 0)";
+		var hide = hide = Math.floor((5 * this.stateChangeDt) % 3) === 0;
+		if (e.user && this.errorSubmitting) {
+			// Error submitting
+			col = "red";
+		} else if (e.user) {
+			// Highlight current user
+			col = "gold";
 		}
 		
 		y += getLeaderboardEntrySpacing();
 		c.textAlign = "right";
 		var space = x - 2*spacing - numX;
-		drawFlappyText(c, e.username, x - spacing, y, col, outline, space, false);
+		if (this.submitting && e.user) {
+			var now = Date.now().valueOf() / 1000.0;
+			var dt = now - this.submittingStartTime;
+			var dots = Math.floor(((2 * dt) % 3) + 1);
+			var text = ".".repeat(dots);
+
+			drawFlappyText(c, text, x - spacing, y, col, outline);
+		} else if (this.errorSubmitting && e.user) {
+			drawFlappyText(c, "ERROR", x - spacing, y, col, outline);
+		} else if (e.user && !this.submitted) {
+			if (this.usernameEntry.style.visibility === "visible") {
+				this.usernameEntry.style.fontSize = getLeaderboardFontSize() + "px";
+				this.usernameEntry.style.width = space + "px";
+				this.usernameEntry.style.left = (x - spacing - space) + "px";
+				this.usernameEntry.style.right = (x - spacing) + "px";
+				this.usernameEntry.style.top = (y - 4) + "px";
+			}
+		} else {
+			drawFlappyText(c, e.name, x - spacing, y, col, outline, space, false);
+		}
 		drawFlappyText(c, (i + 1) + ".", numX, y, col, outline);
 		c.textAlign = "center";
 		drawFlappyText(c, e.score, scoreX, y, col, outline);

@@ -1,34 +1,32 @@
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator, EmailValidator
 
+# NB: If these constants are updated, remember to update the JavaScript versions (in js/game/validation.js)!!
+NUM_LEADERBOARD_ENTRIES = 10
+MAX_NAME_LENGTH = 16
+LEGAL_SYMBOLS = '-_'
 
-USERNAME_MIN_LENGTH = 1
-USERNAME_MAX_LENGTH = 16
-USERNAME_REGEX = r'^[-_a-zA-Z0-9]*$'
-USERNAME_HELP_TEXT = "Username must only consist of alphanumeric characters, dashes or underscores."
-PASSWORD_MIN_LENGTH = 6
-PASSWORD_MAX_LENGTH = 24
-EMAIL_MIN_LENGTH = 4
-EMAIL_MAX_LENGTH = 24
+# NB: If updating these functions, ensure that the JavaScript functions are also updated (in js/game/validation.js)!
+def is_valid_name_char(c):
+    if (c >= 'a' and c <= 'z'):
+        return True
+    elif (c >= 'A' and c <= 'Z'):
+        return True
+    elif (c >= '1' and c <= '9'):
+        return True
+    elif (LEGAL_SYMBOLS.find(c) != -1):
+        return True
+    else:
+        return False
 
-USERNAME_VALIDATORS = [
-    MinLengthValidator(USERNAME_MIN_LENGTH),
-    MaxLengthValidator(USERNAME_MAX_LENGTH),
-    RegexValidator(
-        regex=USERNAME_REGEX,
-        message=[
-            "Invalid username.",
-            "Username must only consist of alphanumeric characters, dashes or underscores."
-        ]
-    )
-]
-
-PASSWORD_VALIDATORS = [
-    MinLengthValidator(PASSWORD_MIN_LENGTH),
-    MaxLengthValidator(PASSWORD_MAX_LENGTH)
-]
-
-EMAIL_VALIDATORS = [
-    MinLengthValidator(EMAIL_MIN_LENGTH),
-    MaxLengthValidator(EMAIL_MAX_LENGTH),
-    EmailValidator()
-]
+# NB: If updating these functions, ensure that the JavaScript functions are also updated (in js/game/validation.js)!
+def is_valid_name(name):
+    reason = ''
+    if (len(name) == 0):
+        return (False, 'name is an empty string')
+    elif (len(name) > MAX_NAME_LENGTH):
+        return (False, 'name is too long (' + len(name) + ' characters, max is ' + MAX_NAME_LENGTH + ')')
+    else:
+        for c in name:
+            if (not is_valid_name_char(c)):
+                return (False, 'name contains an invalid character (' + c + ')')
+    return True
