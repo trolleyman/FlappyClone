@@ -1,9 +1,13 @@
 {% extends "FlappyClone/_base.html" %}
 {% load static %}
+{% load compress %}
 {% block head %}
+	{% compress css %}
 	<link rel="stylesheet" href="{% static 'FlappyClone/css/game.css' %}">
+	{% endcompress %}
 	
 	<script>"use strict";</script>
+	{% compress js %}
 	<script src="{% static 'FlappyClone/js/game/validation.js' %}"></script>
 	<script src="{% static 'FlappyClone/js/game/sizing.js' %}"></script>
 	<script src="{% static 'FlappyClone/js/game/fontfaceonload.js' %}"></script>
@@ -16,6 +20,7 @@
 	<script src="{% static 'FlappyClone/js/game/pipe.js' %}"></script>
 	<script src="{% static 'FlappyClone/js/game/bird.js' %}"></script>
 	<script src="{% static 'FlappyClone/js/game/game.js' %}"></script>
+	{% endcompress %}
 {% endblock head %}
 {% block content %}
 	<div id="game-container">

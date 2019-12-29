@@ -1,4 +1,5 @@
 {% load static %}
+{% load compress %}
 <!DOCTYPE html>
 <html>
 	<head>
@@ -24,8 +25,10 @@
 		<script src="{% static 'FlappyClone/lib/jquery-3.2.0.min.js' %}"></script>
 		
 		<!-- Common CSS files -->
+		{% compress css %}
 		<link rel="stylesheet" href="{% static 'FlappyClone/css/normalize.css' %}">
 		<link rel="stylesheet" href="{% static 'FlappyClone/css/base.css' %}">
+		{% endcompress %}
 		
 		<!-- Icon stuff. Generated using http://realfavicongenerator.net -->
 		<link rel="apple-touch-icon" sizes="180x180" href="{% static 'FlappyClone/apple-touch-icon.png' %}">
